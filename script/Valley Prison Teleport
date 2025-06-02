@@ -1,4 +1,3 @@
--- Waypoints data
 local waypoints = {}
 waypoints[1] = {name = "Armory", cframe = CFrame.new(749.077, -0.969, -482.823, 0.999135, 0, 0.041589, 0, 1, 0, -0.041589, 0, 0.999135)}
 waypoints[2] = {name = "Gas", cframe = CFrame.new(294.991, 5.45, -602.469, 0.995327, 0, -0.096561, 0, 1, 0, 0.096561, 0, 0.995327)}
@@ -6,7 +5,6 @@ waypoints[3] = {name = "Escapee", cframe = CFrame.new(256.406, 5, -317.208, -0.8
 waypoints[4] = {name = "BasketBall", cframe = CFrame.new(176.54, 10.196, 32.797, 0.232877, 0, -0.972506, 0, 1, 0, 0.972506, 0, 0.232877)}
 waypoints[5] = {name = "Cell", cframe = CFrame.new(13.06, 22.125, -95.882, -0.922152, 0, -0.386828, 0, 1, 0, 0.386828, 0, -0.922152)}
 
--- Base64 decode function
 local function decodeBase64(data)
 	local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 	data = string.gsub(data, '[^'..b..'=]', '')
@@ -27,11 +25,11 @@ local function decodeBase64(data)
 	end))
 end
 
--- Password yang benar
 local correctPassword = decodeBase64("RG16QXJ0MDMyNDk4") -- "DmzArt032498"
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local GuiService = game:GetService("GuiService")
 
 -- Buat GUI password input
 local passwordGui = Instance.new("ScreenGui")
@@ -40,8 +38,8 @@ passwordGui.Parent = playerGui
 passwordGui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", passwordGui)
-frame.Size = UDim2.new(0, 300, 0, 140)
-frame.Position = UDim2.new(0.5, -150, 0.5, -70)
+frame.Size = UDim2.new(0, 320, 0, 180)
+frame.Position = UDim2.new(0.5, -160, 0.5, -90)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BackgroundTransparency = 0.2
 frame.BorderSizePixel = 0
@@ -67,12 +65,6 @@ inputBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 inputBox.TextColor3 = Color3.new(1,1,1)
 inputBox.Text = ""
 inputBox.TextEditable = true
-inputBox.TextStrokeTransparency = 1
-inputBox.TextTransparency = 0
-inputBox.TextScaled = false
-inputBox.TextWrapped = false
-inputBox.TextEditable = true
-inputBox.ClearTextOnFocus = false
 inputBox.TextXAlignment = Enum.TextXAlignment.Left
 inputBox.TextYAlignment = Enum.TextYAlignment.Center
 
@@ -85,23 +77,28 @@ submitBtn.TextSize = 20
 submitBtn.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
 submitBtn.TextColor3 = Color3.new(1,1,1)
 
--- Fungsi buat GUI waypoint, dipanggil jika password benar
+local getKeyBtn = Instance.new("TextButton", frame)
+getKeyBtn.Size = UDim2.new(1, -20, 0, 35)
+getKeyBtn.Position = UDim2.new(0, 10, 0, 140)
+getKeyBtn.Text = "Get Key"
+getKeyBtn.Font = Enum.Font.SourceSansBold
+getKeyBtn.TextSize = 20
+getKeyBtn.BackgroundColor3 = Color3.fromRGB(100, 170, 100)
+getKeyBtn.TextColor3 = Color3.new(1,1,1)
+
 local function createWaypointGUI()
     passwordGui:Destroy()
 
-    -- ScreenGui utama
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "WaypointGUI"
     screenGui.Parent = playerGui
     screenGui.ResetOnSpawn = false
 
-    -- Blur effect di belakang GUI
     local blurEffect = Instance.new("BlurEffect")
     blurEffect.Size = 10
     blurEffect.Parent = game.Lighting
     blurEffect.Enabled = false
 
-    -- Frame utama dengan transparansi dan sedikit blur (via UIStroke semi transparan)
     local mainFrame = Instance.new("Frame")
     mainFrame.Size = UDim2.new(0, 300, 0, 200)
     mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
@@ -110,9 +107,8 @@ local function createWaypointGUI()
     mainFrame.BorderSizePixel = 0
     mainFrame.Parent = screenGui
     mainFrame.Active = true
-    mainFrame.Draggable = true -- Bisa di-drag
+    mainFrame.Draggable = true
 
-    -- Judul GUI
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Size = UDim2.new(1, 0, 0, 30)
     titleLabel.BackgroundTransparency = 1
@@ -122,7 +118,6 @@ local function createWaypointGUI()
     titleLabel.TextSize = 22
     titleLabel.Parent = mainFrame
 
-    -- Container waypoint list
     local waypointList = Instance.new("ScrollingFrame")
     waypointList.Size = UDim2.new(1, -20, 1, -60)
     waypointList.Position = UDim2.new(0, 10, 0, 40)
@@ -133,7 +128,6 @@ local function createWaypointGUI()
     waypointList.ScrollBarThickness = 6
     waypointList.Parent = mainFrame
 
-    -- Isi waypoint ke list
     for i, wp in ipairs(waypoints) do
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(1, -10, 0, 25)
@@ -155,7 +149,6 @@ local function createWaypointGUI()
         end)
     end
 
-    -- Tombol minimize
     local minimizeBtn = Instance.new("TextButton")
     minimizeBtn.Size = UDim2.new(0, 60, 0, 25)
     minimizeBtn.Position = UDim2.new(1, -130, 0, 2)
@@ -166,7 +159,6 @@ local function createWaypointGUI()
     minimizeBtn.TextSize = 14
     minimizeBtn.Parent = mainFrame
 
-    -- Tombol exit/close
     local exitBtn = Instance.new("TextButton")
     exitBtn.Size = UDim2.new(0, 60, 0, 25)
     exitBtn.Position = UDim2.new(1, -65, 0, 2)
@@ -177,7 +169,6 @@ local function createWaypointGUI()
     exitBtn.TextSize = 14
     exitBtn.Parent = mainFrame
 
-    -- Blur toggle
     local blurToggle = Instance.new("TextButton")
     blurToggle.Size = UDim2.new(0, 60, 0, 25)
     blurToggle.Position = UDim2.new(0, 5, 0, 2)
@@ -193,7 +184,6 @@ local function createWaypointGUI()
         blurToggle.Text = blurEffect.Enabled and "Blur On" or "Blur Off"
     end)
 
-    -- Minimize toggle
     local minimized = false
     minimizeBtn.MouseButton1Click:Connect(function()
         minimized = not minimized
@@ -203,14 +193,12 @@ local function createWaypointGUI()
         blurToggle.Visible = not minimized
     end)
 
-    -- Exit close GUI
     exitBtn.MouseButton1Click:Connect(function()
         screenGui:Destroy()
         blurEffect.Enabled = false
     end)
 end
 
--- Fungsi cek password
 local function checkPassword(input)
     if input == correctPassword then
         createWaypointGUI()
@@ -220,14 +208,36 @@ local function checkPassword(input)
     end
 end
 
--- Event klik submit
 submitBtn.MouseButton1Click:Connect(function()
     checkPassword(inputBox.Text)
 end)
 
--- Enter key submit
 inputBox.FocusLost:Connect(function(enterPressed)
     if enterPressed then
         checkPassword(inputBox.Text)
+    end
+end)
+
+getKeyBtn.MouseButton1Click:Connect(function()
+    local success, err = pcall(function()
+        GuiService:OpenBrowserWindow("https://link-target.net/1177642/I3uENrXHUsIu")
+    end)
+    if not success then
+        -- Jika gagal buka browser, salin link ke clipboard
+        setclipboard("https://link-target.net/1177642/I3uENrXHUsIu")
+        -- Buat notif sederhana
+        local notif = Instance.new("TextLabel")
+        notif.Size = UDim2.new(0, 280, 0, 40)
+        notif.Position = UDim2.new(0.5, -140, 0.3, 0)
+        notif.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        notif.TextColor3 = Color3.new(1,1,1)
+        notif.Text = "Link copied! Paste and open in your browser."
+        notif.Font = Enum.Font.SourceSansBold
+        notif.TextSize = 18
+        notif.Parent = frame
+
+        delay(3, function()
+            notif:Destroy()
+        end)
     end
 end)
