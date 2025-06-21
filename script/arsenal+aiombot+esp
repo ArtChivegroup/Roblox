@@ -1,12 +1,646 @@
---[[
- .____                  ________ ___.    _____                           __                
- |    |    __ _______   \_____  \\_ |___/ ____\_ __  ______ ____ _____ _/  |_  ___________ 
- |    |   |  |  \__  \   /   |   \| __ \   __\  |  \/  ___// ___\\__  \\   __\/  _ \_  __ \
- |    |___|  |  // __ \_/    |    \ \_\ \  | |  |  /\___ \\  \___ / __ \|  | (  <_> )  | \/
- |_______ \____/(____  /\_______  /___  /__| |____//____  >\___  >____  /__|  \____/|__|   
-         \/          \/         \/    \/                \/     \/     \/                   
-          \_Welcome to LuaObfuscator.com   (Alpha 0.10.9) ~  Much Love, Ferib 
+-- SERVICES (Key System)
+local HttpService = game:GetService("HttpService")
+local PlayersService = game:GetService("Players") -- Renamed to avoid conflict later
+local UserInputServiceKey = game:GetService("UserInputService") -- Renamed
+local StarterGui = game:GetService("StarterGui")
+local CoreGui = game:GetService("CoreGui")
 
-]]--
+local LocalPlayerKey = PlayersService.LocalPlayer -- Renamed
 
-local v0=game:GetService("HttpService");local v1=game:GetService("Players");local v2=game:GetService("UserInputService");local v3=game:GetService("StarterGui");local v4=game:GetService("CoreGui");local v5=v1.LocalPlayer;local v6="https://raw.githubusercontent.com/ArtChivegroup/Jinx/main/Jinx/files/Sync";local v7="https://bloxhub.work.gd/keyblox.html";local v8=nil;local v9=true;local v10=nil;local v11;local function v12() local v14=0 + 0 ;local v15;local v16;while true do if (0==v14) then v15,v16=pcall(function() return game:HttpGet(v6);end);if v15 then return string.match(v16,"%S+");else warn("Failed to fetch key!");return nil;end break;end end end local function v13() v10=Instance.new("ScreenGui",v4);v10.Name="BloxHubKeySystem";v10.ZIndexBehavior=Enum.ZIndexBehavior.Sibling;local v20=Instance.new("Frame",v10);v20.Size=UDim2.new(0 -0 ,350,0 + 0 ,351 -101 );v20.Position=UDim2.new(0.5 -0 , -175,0.5 -0 , -(43 + 82));v20.BackgroundColor3=Color3.fromRGB(30,82 -52 ,117 -87 );v20.BorderSizePixel=0 + 0 ;v20.Active=true;v20.Draggable=true;v20.BackgroundTransparency=0.1;local v28=Instance.new("UICorner",v20);v28.CornerRadius=UDim.new(0 + 0 ,10);local v30=Instance.new("TextLabel",v20);v30.Size=UDim2.new(1,0,1055 -(87 + 968) ,220 -170 );v30.BackgroundTransparency=1 + 0 ;v30.Text="🔑 BloxHub Key System";v30.TextColor3=Color3.fromRGB(576 -321 ,1668 -(447 + 966) ,698 -443 );v30.Font=Enum.Font.GothamBold;v30.TextSize=1839 -(1703 + 114) ;local v38=Instance.new("TextLabel",v20);v38.Size=UDim2.new(702 -(376 + 325) , -(32 -12),0 -0 ,6 + 14 );v38.Position=UDim2.new(0 -0 ,24 -(9 + 5) ,376 -(85 + 291) ,50);v38.BackgroundTransparency=1;v38.Text="🔄 The key changes every 1 hour.";v38.TextColor3=Color3.fromRGB(1465 -(243 + 1022) ,761 -561 ,165 + 35 );v38.Font=Enum.Font.Gotham;v38.TextSize=1194 -(1123 + 57) ;v38.TextXAlignment=Enum.TextXAlignment.Left;local v49=Instance.new("TextBox",v20);v49.Size=UDim2.new(0.8 + 0 ,254 -(163 + 91) ,0,40);v49.Position=UDim2.new(1930.1 -(1869 + 61) ,0,0.35,0);v49.PlaceholderText="Enter Key...";v49.Text="";v49.TextSize=6 + 12 ;v49.TextColor3=Color3.fromRGB(0 -0 ,0,0);v49.BackgroundColor3=Color3.fromRGB(391 -136 ,35 + 220 ,349 -94 );v49.ClearTextOnFocus=false;local v58=Instance.new("UICorner",v49);v58.CornerRadius=UDim.new(0 + 0 ,5);local v60=Instance.new("TextButton",v20);v60.Size=UDim2.new(1474.8 -(1329 + 145) ,971 -(140 + 831) ,1850 -(1409 + 441) ,758 -(15 + 703) );v60.Position=UDim2.new(0.1,0,0.58 + 0 ,438 -(262 + 176) );v60.Text="✅ Submit Key";v60.TextSize=18;v60.BackgroundColor3=Color3.fromRGB(1721 -(345 + 1376) ,170,943 -(198 + 490) );v60.TextColor3=Color3.fromRGB(1126 -871 ,611 -356 ,1461 -(696 + 510) );local v67=Instance.new("UICorner",v60);v67.CornerRadius=UDim.new(0 -0 ,1267 -(1091 + 171) );local v69=Instance.new("TextButton",v20);v69.Size=UDim2.new(0.35,0 + 0 ,0 -0 ,30);v69.Position=UDim2.new(0.1 -0 ,374 -(123 + 251) ,0.82,0 -0 );v69.Text="🌐 Open in Browser";v69.TextSize=712 -(208 + 490) ;v69.BackgroundColor3=Color3.fromRGB(6 + 54 ,27 + 33 ,896 -(660 + 176) );v69.TextColor3=Color3.fromRGB(31 + 224 ,457 -(14 + 188) ,930 -(534 + 141) );local v76=Instance.new("UICorner",v69);v76.CornerRadius=UDim.new(0 + 0 ,5 + 0 );local v78=Instance.new("TextButton",v20);v78.Size=UDim2.new(0.35 + 0 ,0 -0 ,0,30);v78.Position=UDim2.new(0.55 -0 ,0 -0 ,0.82 + 0 ,0);v78.Text="📋 Copy to Clipboard";v78.TextSize=14;v78.BackgroundColor3=Color3.fromRGB(39 + 21 ,456 -(115 + 281) ,139 -79 );v78.TextColor3=Color3.fromRGB(255,212 + 43 ,616 -361 );local v85=Instance.new("UICorner",v78);v85.CornerRadius=UDim.new(0 -0 ,872 -(550 + 317) );local v87=Instance.new("TextButton",v20);v87.Size=UDim2.new(0,25,0 -0 ,25);v87.Position=UDim2.new(1 -0 , -(167 -107),285 -(134 + 151) ,10);v87.Text="-";v87.TextSize=18;v87.BackgroundColor3=Color3.fromRGB(1745 -(970 + 695) ,152 -72 ,2070 -(582 + 1408) );v87.TextColor3=Color3.fromRGB(884 -629 ,320 -65 ,960 -705 );local v94=Instance.new("TextButton",v20);v94.Size=UDim2.new(0,1849 -(1195 + 629) ,0 -0 ,266 -(187 + 54) );v94.Position=UDim2.new(781 -(162 + 618) , -(22 + 8),0,7 + 3 );v94.Text="X";v94.TextSize=38 -20 ;v94.BackgroundColor3=Color3.fromRGB(200,84 -34 ,4 + 46 );v94.TextColor3=Color3.fromRGB(1891 -(1373 + 263) ,1255 -(451 + 549) ,255);v87.MouseButton1Click:Connect(function() local v269=0 + 0 ;while true do if ((0 -0)==v269) then v9= not v9;v20.Visible=v9;break;end end end);v94.MouseButton1Click:Connect(function() if v10 then v10:Destroy();end end);v69.MouseButton1Click:Connect(function() v3:SetCore("SendNotification",{Title="BloxHub Key System",Text="Opening key page in browser...",Duration=8 -3 });if (syn and syn.request) then syn.request({Url=v7,Method="GET"});elseif ((typeof(KRNL_LOADED)~="nil") and KRNL_LOADED.OpenURL) then KRNL_LOADED:OpenURL(v7);elseif getgenv().http_request then getgenv().http_request({Url=v7,Method="GET"});elseif request then request({Url=v7,Method="GET"});else local v359=1384 -(746 + 638) ;while true do if (v359==(0 + 0)) then setclipboard(v7);v3:SetCore("SendNotification",{Title="BloxHub Key System",Text="Browser not supported. Link copied to clipboard!",Duration=7 -2 });break;end end end end);v78.MouseButton1Click:Connect(function() local v270=341 -(218 + 123) ;while true do if (v270==(1581 -(1535 + 46))) then setclipboard(v7);v3:SetCore("SendNotification",{Title="BloxHub Key System",Text="Link copied to clipboard!",Duration=5});break;end end end);v60.MouseButton1Click:Connect(function() local v271=0 + 0 ;local v272;local v273;while true do if (v271==0) then v272=v49.Text;v273=v12();v271=1 + 0 ;end if (v271==1) then if (v272==v273) then local v331=0;while true do if (v331==0) then v3:SetCore("SendNotification",{Title="BloxHub Key System",Text="✅ Key Verified!",Duration=563 -(306 + 254) });wait(1 + 0 );v331=1 -0 ;end if ((1468 -(899 + 568))==v331) then if v10 then local v367=0;while true do if (v367==0) then v10:Destroy();v10=nil;break;end end end if v11 then v11();else warn("Arsenal script function (runArsenalScript) not found!");end break;end end else v3:SetCore("SendNotification",{Title="BloxHub Key System",Text="❌ Invalid Key!",Duration=2 + 1 });end break;end end end);end function v11() local v101=game:GetService("Players");local v102=game:GetService("RunService");local v103=game:GetService("UserInputService");local v104=workspace.CurrentCamera;local v105=v101.LocalPlayer;local v106=v105:GetMouse();local v107=true;local v108=false;local v109=580 -340 ;local v110=false;local v111=true;local v112=723 -(268 + 335) ;local v113=false;local v114=true;local v115=Instance.new("ScreenGui");v115.Name="ESP_Aimbot_GUI";v115.Parent=v4;v115.ZIndexBehavior=Enum.ZIndexBehavior.Sibling;local v120=Instance.new("Frame",v115);v120.Size=UDim2.new(0,490 -(60 + 230) ,0,982 -(426 + 146) );v120.Position=UDim2.new(0 + 0 ,1476 -(282 + 1174) ,811 -(569 + 242) ,57 -37 );v120.BackgroundColor3=Color3.fromRGB(30,2 + 28 ,1054 -(706 + 318) );v120.BorderSizePixel=0;v120.Draggable=true;v120.Active=true;local v127=Instance.new("UICorner",v120);v127.CornerRadius=UDim.new(0,1259 -(721 + 530) );local v129=Instance.new("TextLabel",v120);v129.Size=UDim2.new(1272 -(945 + 326) ,0 -0 ,0 + 0 ,730 -(271 + 429) );v129.Position=UDim2.new(0 + 0 ,1500 -(1408 + 92) ,0,1086 -(461 + 625) );v129.BackgroundColor3=Color3.fromRGB(1313 -(993 + 295) ,25,2 + 23 );v129.Text="Ultimate GUI V11 by BloxHub";v129.TextColor3=Color3.fromRGB(1171 -(418 + 753) ,65 + 105 ,250);v129.Font=Enum.Font.SourceSansBold;v129.TextSize=2 + 14 ;local v138=Instance.new("UICorner",v129);v138.CornerRadius=UDim.new(0 + 0 ,3 + 5 );local v140=Instance.new("TextButton",v120);v140.Size=UDim2.new(529 -(406 + 123) ,1794 -(1749 + 20) ,0,25);v140.Position=UDim2.new(1 + 0 , -(1382 -(1249 + 73)),0 + 0 ,3);v140.Text="_";v140.Font=Enum.Font.SourceSansBold;v140.TextSize=20;v140.TextColor3=Color3.fromRGB(1365 -(466 + 679) ,529 -309 ,629 -409 );v140.BackgroundColor3=Color3.fromRGB(1950 -(106 + 1794) ,16 + 34 ,13 + 37 );local v148=Instance.new("UICorner",v140);v148.CornerRadius=UDim.new(0,11 -7 );local v150=Instance.new("TextButton",v120);v150.Size=UDim2.new(0 -0 ,139 -(4 + 110) ,0,25);v150.Position=UDim2.new(585 -(57 + 527) , -30,1427 -(41 + 1386) ,106 -(17 + 86) );v150.Text="X";v150.Font=Enum.Font.SourceSansBold;v150.TextSize=14 + 6 ;v150.TextColor3=Color3.fromRGB(220,490 -270 ,220);v150.BackgroundColor3=Color3.fromRGB(200,50,50);local v158=Instance.new("UICorner",v150);v158.CornerRadius=UDim.new(0 -0 ,4);local v160=Instance.new("TextButton",v115);v160.Size=UDim2.new(166 -(122 + 44) ,103 -43 ,0 -0 ,25 + 5 );v160.Position=UDim2.new(0 + 0 ,40 -20 ,0,20);v160.Text="GUI";v160.Font=Enum.Font.SourceSansBold;v160.TextSize=83 -(30 + 35) ;v160.BackgroundColor3=Color3.fromRGB(0,117 + 53 ,250);v160.TextColor3=Color3.fromRGB(255,1512 -(1043 + 214) ,963 -708 );v160.Visible=false;local v169=Instance.new("UICorner",v160);v169.CornerRadius=UDim.new(0,6);local v171=Instance.new("Frame",v115);v171.Size=UDim2.new(1212 -(323 + 889) ,v109 * 2 ,0 -0 ,v109 * (582 -(361 + 219)) );v171.AnchorPoint=Vector2.new(320.5 -(53 + 267) ,0.5);v171.Position=UDim2.new(0 + 0 ,v106.X,0,v106.Y);v171.BackgroundTransparency=414 -(15 + 398) ;v171.BorderSizePixel=984 -(18 + 964) ;v171.BorderColor3=Color3.fromRGB(0 -0 ,99 + 71 ,158 + 92 );v171.Visible=true;local v179=Instance.new("UICorner",v171);v179.CornerRadius=UDim.new(851 -(20 + 830) ,0 + 0 );local function v181() local v274=126 -(116 + 10) ;while true do if ((1 + 0)==v274) then v160.Visible=v113;if v171 then v171.Visible= not v113 and v114 ;end break;end if (0==v274) then v113= not v113;v120.Visible= not v113;v274=739 -(542 + 196) ;end end end v140.MouseButton1Click:Connect(v181);v160.MouseButton1Click:Connect(v181);local function v182() local v275=0 -0 ;while true do if ((1 + 0)==v275) then for v327,v328 in pairs(v101:GetPlayers()) do if v328.Character then for v357,v358 in ipairs(v328.Character:GetChildren()) do if (v358:IsA("BillboardGui") and (v358.Name=="ESP_DOT")) then v358:Destroy();end end end end if v115 then local v333=0 + 0 ;while true do if ((0 + 0)==v333) then v115:Destroy();v115=nil;break;end end end break;end if (v275==(0 -0)) then v114=false;if v171 then local v334=0;while true do if (v334==0) then v171:Destroy();v171=nil;break;end end end v275=2 -1 ;end end end v150.MouseButton1Click:Connect(v182);local v183=Instance.new("TextLabel",v120);v183.Position=UDim2.new(0,20,0,1721 -(1126 + 425) );v183.Size=UDim2.new(405 -(118 + 287) ,140,0,97 -72 );v183.Text="FOV Radius: "   .. tostring(v109) ;v183.BackgroundTransparency=1;v183.TextColor3=Color3.fromRGB(1291 -(118 + 1003) ,497 -327 ,255);v183.TextScaled=true;v183.Font=Enum.Font.Gotham;local v192=Instance.new("Frame",v120);v192.Position=UDim2.new(377 -(142 + 235) ,90 -70 ,0,44 + 156 );v192.Size=UDim2.new(977 -(553 + 424) ,264 -124 ,0,12);v192.BackgroundColor3=Color3.fromRGB(49 + 6 ,60 + 0 ,47 + 33 );v192.BorderSizePixel=0 + 0 ;local v197=Instance.new("UICorner",v192);v197.CornerRadius=UDim.new(1 + 0 ,0);local v199=Instance.new("Frame",v192);v199.Size=UDim2.new((v109-(86 -46))/200 ,0 -0 ,1,0 -0 );v199.BackgroundColor3=Color3.fromRGB(0,170,73 + 177 );v199.BorderSizePixel=0;local v203=Instance.new("UICorner",v199);v203.CornerRadius=UDim.new(4 -3 ,753 -(239 + 514) );local v205=Instance.new("TextLabel",v120);v205.Position=UDim2.new(0 + 0 ,1349 -(797 + 532) ,0 + 0 ,76 + 149 );v205.Size=UDim2.new(0,329 -189 ,0,1227 -(373 + 829) );v205.Text="Max Distance: "   .. tostring(v112) ;v205.BackgroundTransparency=732 -(476 + 255) ;v205.TextColor3=Color3.fromRGB(170,255,1300 -(369 + 761) );v205.TextScaled=true;v205.Font=Enum.Font.Gotham;local v213=Instance.new("Frame",v120);v213.Position=UDim2.new(0,12 + 8 ,0,463 -208 );v213.Size=UDim2.new(0,265 -125 ,0,250 -(64 + 174) );v213.BackgroundColor3=Color3.fromRGB(8 + 47 ,118 -38 ,60);v213.BorderSizePixel=336 -(144 + 192) ;local v218=Instance.new("UICorner",v213);v218.CornerRadius=UDim.new(217 -(42 + 174) ,0 + 0 );local v220=Instance.new("Frame",v213);v220.Size=UDim2.new((v112-(83 + 17))/(2082 + 2818) ,0,1,0);v220.BackgroundColor3=Color3.fromRGB(1504 -(363 + 1141) ,255,120);v220.BorderSizePixel=1580 -(1183 + 397) ;local v224=Instance.new("UICorner",v220);v224.CornerRadius=UDim.new(1,0 -0 );local v226=Instance.new("TextButton",v120);v226.Size=UDim2.new(0 + 0 ,105 + 35 ,1975 -(1913 + 62) ,26 + 14 );v226.Position=UDim2.new(0 -0 ,1953 -(565 + 1368) ,0,131 -96 );v226.Text="ESP: ON";v226.BackgroundColor3=Color3.fromRGB(34,38,54);v226.TextColor3=Color3.fromRGB(1661 -(1477 + 184) ,346 -91 ,112 + 8 );v226.TextScaled=true;local v233=Instance.new("UICorner",v226);v233.CornerRadius=UDim.new(856 -(564 + 292) ,9 -3 );local v235=Instance.new("TextButton",v120);v235.Size=UDim2.new(0,421 -281 ,304 -(244 + 60) ,40);v235.Position=UDim2.new(0 + 0 ,20,0,80);v235.Text="Team Check: OFF";v235.BackgroundColor3=Color3.fromRGB(510 -(41 + 435) ,1039 -(938 + 63) ,42 + 12 );v235.TextColor3=Color3.fromRGB(1380 -(936 + 189) ,84 + 171 ,1733 -(1565 + 48) );v235.TextScaled=true;local v242=Instance.new("UICorner",v235);v242.CornerRadius=UDim.new(0 + 0 ,1144 -(782 + 356) );local v244=Instance.new("TextButton",v120);v244.Size=UDim2.new(267 -(176 + 91) ,364 -224 ,0 -0 ,40);v244.Position=UDim2.new(1092 -(975 + 117) ,20,1875 -(157 + 1718) ,102 + 23 );v244.Text="Auto Snap: ON";v244.BackgroundColor3=Color3.fromRGB(120 -86 ,38,184 -130 );v244.TextColor3=Color3.fromRGB(1018 -(697 + 321) ,255,326 -206 );v244.TextScaled=true;local v251=Instance.new("UICorner",v244);v251.CornerRadius=UDim.new(0 -0 ,13 -7 );local v253=Instance.new("TextButton",v120);v253.Size=UDim2.new(0,140,0 + 0 ,74 -34 );v253.Position=UDim2.new(0,20,0 -0 ,1507 -(322 + 905) );v253.Text="Aimbot: OFF";v253.BackgroundColor3=Color3.fromRGB(645 -(602 + 9) ,38,1243 -(449 + 740) );v253.TextColor3=Color3.fromRGB(255,100,100);v253.TextScaled=true;local v260=Instance.new("UICorner",v253);v260.CornerRadius=UDim.new(0,878 -(826 + 46) );v226.MouseButton1Click:Connect(function() v107= not v107;v226.Text=(v107 and "ESP: ON") or "ESP: OFF" ;v226.TextColor3=(v107 and Color3.fromRGB(947 -(245 + 702) ,805 -550 ,39 + 81 )) or Color3.fromRGB(255,1998 -(260 + 1638) ,100) ;end);v235.MouseButton1Click:Connect(function() local v278=0;while true do if (v278==(441 -(382 + 58))) then v235.TextColor3=(v110 and Color3.fromRGB(0,818 -563 ,100 + 20 )) or Color3.fromRGB(526 -271 ,757 -502 ,1325 -(902 + 303) ) ;break;end if (v278==(0 -0)) then v110= not v110;v235.Text=(v110 and "Team Check: ON") or "Team Check: OFF" ;v278=2 -1 ;end end end);v244.MouseButton1Click:Connect(function() local v279=0;while true do if (1==v279) then v244.TextColor3=(v111 and Color3.fromRGB(0 + 0 ,1945 -(1121 + 569) ,334 -(22 + 192) )) or Color3.fromRGB(938 -(483 + 200) ,1563 -(1404 + 59) ,273 -173 ) ;break;end if (v279==(0 -0)) then v111= not v111;v244.Text=(v111 and "Auto Snap: ON") or "Auto Snap: OFF" ;v279=1;end end end);v253.MouseButton1Click:Connect(function() v108= not v108;v253.Text=(v108 and "Aimbot: ON") or "Aimbot: OFF" ;v253.TextColor3=(v108 and Color3.fromRGB(0,255,120)) or Color3.fromRGB(255,865 -(468 + 297) ,100) ;end);local v262=false;v192.InputBegan:Connect(function(v282) if (v282.UserInputType==Enum.UserInputType.MouseButton1) then v262=true;end end);v192.InputEnded:Connect(function(v283) if (v283.UserInputType==Enum.UserInputType.MouseButton1) then v262=false;end end);v103.InputChanged:Connect(function(v284) if (v262 and (v284.UserInputType==Enum.UserInputType.MouseMovement)) then local v305=562 -(334 + 228) ;local v306;while true do if (v305==(0 -0)) then v306=math.clamp((v284.Position.X-v192.AbsolutePosition.X)/v192.AbsoluteSize.X ,0 -0 ,1);v109=math.floor((72 -32) + (v306 * (57 + 143)) );v305=1;end if (v305==(237 -(141 + 95))) then v199.Size=UDim2.new((v109-40)/(197 + 3) ,0,1,0);v183.Text="FOV Radius: "   .. tostring(v109) ;break;end end end end);local v263=false;v213.InputBegan:Connect(function(v285) if (v285.UserInputType==Enum.UserInputType.MouseButton1) then v263=true;end end);v213.InputEnded:Connect(function(v286) if (v286.UserInputType==Enum.UserInputType.MouseButton1) then v263=false;end end);v103.InputChanged:Connect(function(v287) if (v263 and (v287.UserInputType==Enum.UserInputType.MouseMovement)) then local v307=0 -0 ;local v308;while true do if (v307==(0 -0)) then v308=math.clamp((v287.Position.X-v213.AbsolutePosition.X)/v213.AbsoluteSize.X ,0 + 0 ,2 -1 );v112=math.floor(100 + (v308 * 4900) );v307=1 + 0 ;end if (v307==(1 + 0)) then v220.Size=UDim2.new((v112-(140 -40))/4900 ,0 + 0 ,164 -(92 + 71) ,0 + 0 );v205.Text="Max Distance: "   .. tostring(v112) ;break;end end end end);local function v264(v288) if (v105.Team and v288.Team) then return v105.Team==v288.Team ;end return false;end local function v265(v289) local v290=0 -0 ;while true do if (v290==(765 -(574 + 191))) then if ( not v105.Character or  not v105.Character:FindFirstChild("HumanoidRootPart") or  not v289) then return false;end return (v105.Character.HumanoidRootPart.Position-v289.Position).Magnitude<=v112 ;end end end local function v266(v291) local function v292() if (v291.Character and v291.Character:FindFirstChild("Head")) then local v319=0;local v320;local v321;local v322;while true do if (v319==(2 + 0)) then v321=Instance.new("Frame",v320);v321.Size=UDim2.new(1,0 -0 ,1 + 0 ,849 -(254 + 595) );v321.BackgroundColor3=Color3.fromRGB(126 -(55 + 71) ,335 -80 ,120);v321.BackgroundTransparency=0;v319=1793 -(573 + 1217) ;end if (v319==(0 -0)) then if v291.Character:FindFirstChild("ESP_DOT") then return;end v320=Instance.new("BillboardGui");v320.Name="ESP_DOT";v320.Size=UDim2.new(0 + 0 ,7,0,10 -3 );v319=940 -(714 + 225) ;end if (v319==3) then v321.BorderSizePixel=0;v322=Instance.new("UICorner",v321);v322.CornerRadius=UDim.new(2 -1 ,0);break;end if (v319==1) then v320.Adornee=v291.Character.Head;v320.AlwaysOnTop=true;v320.LightInfluence=0;v320.Parent=v291.Character;v319=2;end end end end if v291.Character then v292();end v291.CharacterAdded:Connect(function(v301) local v302=0 -0 ;while true do if (v302==0) then task.wait(0.5 + 0 );v292();break;end end end);end local function v267(v293) if v293.Character then local v309=0 -0 ;local v310;while true do if (v309==(806 -(118 + 688))) then v310=v293.Character:FindFirstChild("ESP_DOT");if v310 then v310:Destroy();end break;end end end end for v294,v295 in pairs(v101:GetPlayers()) do if (v295~=v105) then v266(v295);end end v101.PlayerAdded:Connect(function(v296) if (v296~=v105) then v266(v296);end end);v101.PlayerRemoving:Connect(function(v297) v267(v297);end);local function v268() local v298=nil;local v299=math.huge;for v303,v304 in pairs(v101:GetPlayers()) do if ((v304~=v105) and v304.Character and v304.Character:FindFirstChild("Humanoid") and (v304.Character.Humanoid.Health>(48 -(25 + 23))) and v304.Character:FindFirstChild("Head") and v304.Character:FindFirstChild("HumanoidRootPart")) then local v323=0 + 0 ;local v324;local v325;local v326;while true do if (v323==(1888 -(927 + 959))) then if v326 then local v360=0;local v361;while true do if (v360==(0 -0)) then v361=(Vector2.new(v106.X,v106.Y) -Vector2.new(v325.X,v325.Y)).Magnitude;if ((v361<v299) and (v361<v109)) then local v374=732 -(16 + 716) ;while true do if (v374==(0 -0)) then v299=v361;v298=v324;break;end end end break;end end end break;end if ((98 -(11 + 86))==v323) then v324=v304.Character.Head;v325,v326=v104:WorldToViewportPoint(v324.Position);v323=4 -2 ;end if (v323==(285 -(175 + 110))) then if (v110 and v264(v304)) then continue;end if  not v265(v304.Character.HumanoidRootPart) then continue;end v323=1;end end end end return v298;end v102.RenderStepped:Connect(function() local v300=0 -0 ;while true do if (v300==(0 -0)) then if ( not v114 or  not v115 or  not v115.Parent) then return;end if (v171 and v171.Parent) then local v339=0;while true do if (v339==(1796 -(503 + 1293))) then v171.Position=UDim2.new(0 -0 ,v106.X,0 + 0 ,v106.Y);v171.Size=UDim2.new(1061 -(810 + 251) ,v109 * (2 + 0) ,0 + 0 ,v109 * (2 + 0) );v339=1;end if (v339==(534 -(43 + 490))) then v171.Visible= not v113;break;end end end v300=734 -(711 + 22) ;end if (1==v300) then for v329,v330 in pairs(v101:GetPlayers()) do if ((v330~=v105) and v330.Character) then local v356=v330.Character:FindFirstChild("ESP_DOT");if v356 then local v365=0;local v366;while true do if (v365==(3 -2)) then if v366 then local v375=859 -(240 + 619) ;while true do if (v375==(0 + 0)) then if (v110 and v264(v330)) then v366.BackgroundColor3=Color3.fromRGB(0,150,405 -150 );else v366.BackgroundColor3=Color3.fromRGB(17 + 238 ,1804 -(1344 + 400) ,465 -(255 + 150) );end if  not v265(v330.Character:FindFirstChild("HumanoidRootPart")) then v356.Enabled=false;end break;end end end break;end if (0==v365) then v356.Enabled=v107 and  not v113 and v114 ;v366=v356:FindFirstChildWhichIsA("Frame");v365=1 + 0 ;end end end end end if (((v111 and v108) or ( not v111 and v108 and v103:IsMouseButtonPressed(Enum.UserInputType.MouseButton2))) and  not v113 and v114) then local v340=0 + 0 ;local v341;while true do if (v340==(0 -0)) then v341=v268();if (v341 and v341.Parent) then local v368=0;local v369;local v370;local v371;while true do if (v368==(3 -2)) then v371=CFrame.new(v369.Position,v370);v104.CFrame=v371;break;end if (v368==(1739 -(404 + 1335))) then v369=v104.CFrame;v370=v341.Position;v368=1;end end end break;end end end break;end end end);end v13();
+-- CONFIG
+local keyURL = "https://raw.githubusercontent.com/ArtChivegroup/Jinx/main/Jinx/files/Sync"
+local getKeyPage = "https://bloxhub.work.gd/keyblox.html"
+
+-- VARIABLES
+local validKey = nil
+local uiVisible = true
+local KeySystemScreenGui = nil -- Reference to the key system UI
+
+-- FORWARD DECLARATION for the Arsenal script function
+local runArsenalScript
+
+-- FUNCTIONS (Key System)
+local function fetchKey()
+    local success, response = pcall(function()
+        return game:HttpGet(keyURL)
+    end)
+    if success then
+        return string.match(response, "%S+")
+    else
+        warn("Failed to fetch key!")
+        return nil
+    end
+end
+
+local function createKeySystemUI()
+    KeySystemScreenGui = Instance.new("ScreenGui", CoreGui)
+    KeySystemScreenGui.Name = "BloxHubKeySystem"
+    KeySystemScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling -- Ensure it's on top
+
+    local Frame = Instance.new("Frame", KeySystemScreenGui)
+    Frame.Size = UDim2.new(0, 350, 0, 250)
+    Frame.Position = UDim2.new(0.5, -175, 0.5, -125)
+    Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Frame.BorderSizePixel = 0
+    Frame.Active = true
+    Frame.Draggable = true
+    Frame.BackgroundTransparency = 0.1
+
+    local UICorner = Instance.new("UICorner", Frame)
+    UICorner.CornerRadius = UDim.new(0, 10)
+
+    local Title = Instance.new("TextLabel", Frame)
+    Title.Size = UDim2.new(1, 0, 0, 50)
+    Title.BackgroundTransparency = 1
+    Title.Text = "🔑 BloxHub Key System"
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 22
+
+    local Note = Instance.new("TextLabel", Frame)
+    Note.Size = UDim2.new(1, -20, 0, 20)
+    Note.Position = UDim2.new(0, 10, 0, 50)
+    Note.BackgroundTransparency = 1
+    Note.Text = "🔄 The key changes every 1 hour." -- MODIFIED
+    Note.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Note.Font = Enum.Font.Gotham
+    Note.TextSize = 14
+    Note.TextXAlignment = Enum.TextXAlignment.Left
+
+    local KeyBox = Instance.new("TextBox", Frame)
+    KeyBox.Size = UDim2.new(0.8, 0, 0, 40)
+    KeyBox.Position = UDim2.new(0.1, 0, 0.35, 0)
+    KeyBox.PlaceholderText = "Enter Key..."
+    KeyBox.Text = ""
+    KeyBox.TextSize = 18
+    KeyBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+    KeyBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    KeyBox.ClearTextOnFocus = false
+
+    local UICornerKey = Instance.new("UICorner", KeyBox)
+    UICornerKey.CornerRadius = UDim.new(0, 5)
+
+    local Submit = Instance.new("TextButton", Frame)
+    Submit.Size = UDim2.new(0.8, 0, 0, 40)
+    Submit.Position = UDim2.new(0.1, 0, 0.58, 0)
+    Submit.Text = "✅ Submit Key"
+    Submit.TextSize = 18
+    Submit.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    Submit.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+    local UICornerSubmit = Instance.new("UICorner", Submit)
+    UICornerSubmit.CornerRadius = UDim.new(0, 5)
+
+    local GetKeyBrowser = Instance.new("TextButton", Frame)
+    GetKeyBrowser.Size = UDim2.new(0.35, 0, 0, 30)
+    GetKeyBrowser.Position = UDim2.new(0.1, 0, 0.82, 0)
+    GetKeyBrowser.Text = "🌐 Open in Browser"
+    GetKeyBrowser.TextSize = 14
+    GetKeyBrowser.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    GetKeyBrowser.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+    local UICornerBrowser = Instance.new("UICorner", GetKeyBrowser)
+    UICornerBrowser.CornerRadius = UDim.new(0, 5)
+
+    local GetKeyClipboard = Instance.new("TextButton", Frame)
+    GetKeyClipboard.Size = UDim2.new(0.35, 0, 0, 30)
+    GetKeyClipboard.Position = UDim2.new(0.55, 0, 0.82, 0)
+    GetKeyClipboard.Text = "📋 Copy to Clipboard"
+    GetKeyClipboard.TextSize = 14
+    GetKeyClipboard.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    GetKeyClipboard.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+    local UICornerClipboard = Instance.new("UICorner", GetKeyClipboard)
+    UICornerClipboard.CornerRadius = UDim.new(0, 5)
+
+    local Minimize = Instance.new("TextButton", Frame)
+    Minimize.Size = UDim2.new(0, 25, 0, 25)
+    Minimize.Position = UDim2.new(1, -60, 0, 10)
+    Minimize.Text = "-"
+    Minimize.TextSize = 18
+    Minimize.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    Minimize.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+    local Exit = Instance.new("TextButton", Frame)
+    Exit.Size = UDim2.new(0, 25, 0, 25)
+    Exit.Position = UDim2.new(1, -30, 0, 10)
+    Exit.Text = "X"
+    Exit.TextSize = 18
+    Exit.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    Exit.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+    -- Minimize / Expand
+    Minimize.MouseButton1Click:Connect(function()
+        uiVisible = not uiVisible
+        Frame.Visible = uiVisible
+    end)
+
+    -- Exit UI
+    Exit.MouseButton1Click:Connect(function()
+        if KeySystemScreenGui then
+            KeySystemScreenGui:Destroy()
+        end
+    end)
+
+    -- Open key page in browser
+    GetKeyBrowser.MouseButton1Click:Connect(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = "BloxHub Key System",
+            Text = "Opening key page in browser...",
+            Duration = 5
+        })
+
+        if syn and syn.request then
+            syn.request({Url = getKeyPage, Method = "GET"})
+        elseif typeof(KRNL_LOADED) ~= "nil" and KRNL_LOADED.OpenURL then -- KRNL check
+             KRNL_LOADED:OpenURL(getKeyPage)
+        elseif getgenv().http_request then
+            getgenv().http_request({Url = getKeyPage, Method = "GET"})
+        elseif request then
+            request({Url = getKeyPage, Method = "GET"})
+        else
+            setclipboard(getKeyPage)
+            StarterGui:SetCore("SendNotification", {
+                Title = "BloxHub Key System",
+                Text = "Browser not supported. Link copied to clipboard!",
+                Duration = 5
+            })
+        end
+    end)
+
+    -- Copy key link to clipboard
+    GetKeyClipboard.MouseButton1Click:Connect(function()
+        setclipboard(getKeyPage)
+        StarterGui:SetCore("SendNotification", {
+            Title = "BloxHub Key System",
+            Text = "Link copied to clipboard!",
+            Duration = 5
+        })
+    end)
+
+    -- Submit key
+    Submit.MouseButton1Click:Connect(function()
+        local inputKey = KeyBox.Text
+        local currentKey = fetchKey()
+        if inputKey == currentKey then
+            StarterGui:SetCore("SendNotification", {
+                Title = "BloxHub Key System",
+                Text = "✅ Key Verified!",
+                Duration = 3
+            })
+            wait(1)
+            if KeySystemScreenGui then
+                KeySystemScreenGui:Destroy()
+                KeySystemScreenGui = nil -- Clear reference
+            end
+            -- ✅ EXECUTE THE ARSENAL SCRIPT
+            if runArsenalScript then
+                runArsenalScript()
+            else
+                warn("Arsenal script function (runArsenalScript) not found!")
+            end
+        else
+            StarterGui:SetCore("SendNotification", {
+                Title = "BloxHub Key System",
+                Text = "❌ Invalid Key!",
+                Duration = 3
+            })
+        end
+    end)
+end
+
+    -- Services
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local UserInputService = game:GetService("UserInputService")
+    -- CoreGui is already defined globally by key system, but can be redefined locally if needed.
+    -- local CoreGui = game:GetService("CoreGui") 
+    
+    local Camera = workspace.CurrentCamera
+    local LocalPlayer = Players.LocalPlayer
+    local Mouse = LocalPlayer:GetMouse()
+
+    -- State
+    local ESPEnabled = true
+    local AimbotEnabled = false
+    local FOVRadius = 240         -- default FOV
+    local TeamCheck = false
+    local AutoSnap = true
+    local MaxDetectionDistance = 120 -- default
+    local isMinimized = false
+    local isActive = true -- For the main loop of Arsenal script
+
+    -- GUI
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ESP_Aimbot_GUI"
+    screenGui.Parent = CoreGui
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    -- Main Frame
+    local mainFrame = Instance.new("Frame", screenGui)
+    mainFrame.Size = UDim2.new(0, 200, 0, 410)
+    mainFrame.Position = UDim2.new(0, 20, 0, 20)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Draggable = true
+    mainFrame.Active = true
+    local mainFrameCorner = Instance.new("UICorner", mainFrame)
+    mainFrameCorner.CornerRadius = UDim.new(0, 8)
+
+    local titleLabel = Instance.new("TextLabel", mainFrame)
+    titleLabel.Size = UDim2.new(1, 0, 0, 30)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    titleLabel.Text = "Ultimate GUI V11 by BloxHub" -- MODIFIED
+    titleLabel.TextColor3 = Color3.fromRGB(0, 170, 250)
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.TextSize = 16 -- Adjusted for longer text
+    local titleCorner = Instance.new("UICorner", titleLabel)
+    titleCorner.CornerRadius = UDim.new(0,8)
+
+    -- Minimize & Exit
+    local minimizeButton = Instance.new("TextButton", mainFrame)
+    minimizeButton.Size = UDim2.new(0, 25, 0, 25)
+    minimizeButton.Position = UDim2.new(1, -60, 0, 3)
+    minimizeButton.Text = "_"
+    minimizeButton.Font = Enum.Font.SourceSansBold
+    minimizeButton.TextSize = 20
+    minimizeButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    minimizeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    local minimizeCorner = Instance.new("UICorner", minimizeButton)
+    minimizeCorner.CornerRadius = UDim.new(0, 4)
+
+    local exitButton = Instance.new("TextButton", mainFrame)
+    exitButton.Size = UDim2.new(0, 25, 0, 25)
+    exitButton.Position = UDim2.new(1, -30, 0, 3)
+    exitButton.Text = "X"
+    exitButton.Font = Enum.Font.SourceSansBold
+    exitButton.TextSize = 20
+    exitButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    exitButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    local exitCorner = Instance.new("UICorner", exitButton)
+    exitCorner.CornerRadius = UDim.new(0, 4)
+
+    -- Logo Button (for minimize)
+    local logoButton = Instance.new("TextButton", screenGui)
+    logoButton.Size = UDim2.new(0, 60, 0, 30)
+    logoButton.Position = UDim2.new(0, 20, 0, 20)
+    logoButton.Text = "GUI"
+    logoButton.Font = Enum.Font.SourceSansBold
+    logoButton.TextSize = 18
+    logoButton.BackgroundColor3 = Color3.fromRGB(0, 170, 250)
+    logoButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    logoButton.Visible = false
+    local logoCorner = Instance.new("UICorner", logoButton)
+    logoCorner.CornerRadius = UDim.new(0, 6)
+    
+    -- FOV CIRCLE (border-only, always on cursor)
+    local fovFrame = Instance.new("Frame", screenGui)
+    fovFrame.Size = UDim2.new(0, FOVRadius * 2, 0, FOVRadius * 2)
+    fovFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    fovFrame.Position = UDim2.new(0, Mouse.X, 0, Mouse.Y)
+    fovFrame.BackgroundTransparency = 1
+    fovFrame.BorderSizePixel = 2
+    fovFrame.BorderColor3 = Color3.fromRGB(0, 170, 250)
+    fovFrame.Visible = true
+    local fovCorner = Instance.new("UICorner", fovFrame)
+    fovCorner.CornerRadius = UDim.new(1, 0)
+
+
+    -- Minimize/restore/exit logic
+    local function toggleMinimize()
+        isMinimized = not isMinimized
+        mainFrame.Visible = not isMinimized
+        logoButton.Visible = isMinimized
+        if fovFrame then fovFrame.Visible = not isMinimized and isActive end
+    end
+    minimizeButton.MouseButton1Click:Connect(toggleMinimize)
+    logoButton.MouseButton1Click:Connect(toggleMinimize)
+
+    local function cleanup()
+        isActive = false
+        if fovFrame then fovFrame:Destroy() fovFrame = nil end
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                for _, child in ipairs(player.Character:GetChildren()) do
+                    if child:IsA("BillboardGui") and child.Name == "ESP_DOT" then
+                        child:Destroy()
+                    end
+                end
+            end
+        end
+        if screenGui then screenGui:Destroy() screenGui = nil end
+    end
+    exitButton.MouseButton1Click:Connect(cleanup)
+
+
+    -- FOV Slider
+    local fovLabel = Instance.new("TextLabel", mainFrame)
+    fovLabel.Position = UDim2.new(0, 20, 0, 170)
+    fovLabel.Size = UDim2.new(0, 140, 0, 25)
+    fovLabel.Text = "FOV Radius: " .. tostring(FOVRadius)
+    fovLabel.BackgroundTransparency = 1
+    fovLabel.TextColor3 = Color3.fromRGB(170,170,255)
+    fovLabel.TextScaled = true
+    fovLabel.Font = Enum.Font.Gotham
+
+    local fovSliderBG = Instance.new("Frame", mainFrame)
+    fovSliderBG.Position = UDim2.new(0, 20, 0, 200)
+    fovSliderBG.Size = UDim2.new(0, 140, 0, 12)
+    fovSliderBG.BackgroundColor3 = Color3.fromRGB(55, 60, 80)
+    fovSliderBG.BorderSizePixel = 0
+    local fovSliderCorner = Instance.new("UICorner", fovSliderBG)
+    fovSliderCorner.CornerRadius = UDim.new(1,0)
+
+    local fovSliderBar = Instance.new("Frame", fovSliderBG)
+    fovSliderBar.Size = UDim2.new((FOVRadius-40)/200, 0, 1, 0)
+    fovSliderBar.BackgroundColor3 = Color3.fromRGB(0, 170, 250)
+    fovSliderBar.BorderSizePixel = 0
+    local fovSliderBarCorner = Instance.new("UICorner", fovSliderBar)
+    fovSliderBarCorner.CornerRadius = UDim.new(1,0)
+
+    -- Max Distance Slider
+    local distLabel = Instance.new("TextLabel", mainFrame)
+    distLabel.Position = UDim2.new(0, 20, 0, 225)
+    distLabel.Size = UDim2.new(0, 140, 0, 25)
+    distLabel.Text = "Max Distance: " .. tostring(MaxDetectionDistance)
+    distLabel.BackgroundTransparency = 1
+    distLabel.TextColor3 = Color3.fromRGB(170,255,170)
+    distLabel.TextScaled = true
+    distLabel.Font = Enum.Font.Gotham
+
+    local distSliderBG = Instance.new("Frame", mainFrame)
+    distSliderBG.Position = UDim2.new(0, 20, 0, 255)
+    distSliderBG.Size = UDim2.new(0, 140, 0, 12)
+    distSliderBG.BackgroundColor3 = Color3.fromRGB(55, 80, 60)
+    distSliderBG.BorderSizePixel = 0
+    local distSliderCorner = Instance.new("UICorner", distSliderBG)
+    distSliderCorner.CornerRadius = UDim.new(1,0)
+
+    local distSliderBar = Instance.new("Frame", distSliderBG)
+    distSliderBar.Size = UDim2.new((MaxDetectionDistance-100)/4900, 0, 1, 0)
+    distSliderBar.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
+    distSliderBar.BorderSizePixel = 0
+    local distSliderBarCorner = Instance.new("UICorner", distSliderBar)
+    distSliderBarCorner.CornerRadius = UDim.new(1,0)
+
+    -- ESP Toggle
+    local espButton = Instance.new("TextButton", mainFrame)
+    espButton.Size = UDim2.new(0, 140, 0, 40)
+    espButton.Position = UDim2.new(0, 20, 0, 35) -- Adjusted Y position
+    espButton.Text = "ESP: ON"
+    espButton.BackgroundColor3 = Color3.fromRGB(34, 38, 54)
+    espButton.TextColor3 = Color3.fromRGB(0, 255, 120)
+    espButton.TextScaled = true
+    local espBtnCorner = Instance.new("UICorner", espButton)
+    espBtnCorner.CornerRadius = UDim.new(0,6)
+
+    -- Team Check Toggle
+    local teamButton = Instance.new("TextButton", mainFrame)
+    teamButton.Size = UDim2.new(0, 140, 0, 40)
+    teamButton.Position = UDim2.new(0, 20, 0, 80) -- Adjusted Y position
+    teamButton.Text = "Team Check: OFF"
+    teamButton.BackgroundColor3 = Color3.fromRGB(34, 38, 54)
+    teamButton.TextColor3 = Color3.fromRGB(255, 255, 120)
+    teamButton.TextScaled = true
+    local teamBtnCorner = Instance.new("UICorner", teamButton)
+    teamBtnCorner.CornerRadius = UDim.new(0,6)
+
+    -- Auto Snap Toggle
+    local autoSnapButton = Instance.new("TextButton", mainFrame)
+    autoSnapButton.Size = UDim2.new(0, 140, 0, 40)
+    autoSnapButton.Position = UDim2.new(0, 20, 0, 125) -- Adjusted Y position
+    autoSnapButton.Text = "Auto Snap: ON"
+    autoSnapButton.BackgroundColor3 = Color3.fromRGB(34, 38, 54)
+    autoSnapButton.TextColor3 = Color3.fromRGB(0, 255, 120)
+    autoSnapButton.TextScaled = true
+    local snapBtnCorner = Instance.new("UICorner", autoSnapButton)
+    snapBtnCorner.CornerRadius = UDim.new(0,6)
+
+    -- Aimbot Toggle (manual, only active if AutoSnap is off)
+    local aimbotButton = Instance.new("TextButton", mainFrame)
+    aimbotButton.Size = UDim2.new(0, 140, 0, 40)
+    aimbotButton.Position = UDim2.new(0, 20, 0, 280) -- Adjusted Y position
+    aimbotButton.Text = "Aimbot: OFF"
+    aimbotButton.BackgroundColor3 = Color3.fromRGB(34, 38, 54)
+    aimbotButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+    aimbotButton.TextScaled = true
+    local aimBtnCorner = Instance.new("UICorner", aimbotButton)
+    aimBtnCorner.CornerRadius = UDim.new(0,6)
+
+    -- Button Toggles
+    espButton.MouseButton1Click:Connect(function()
+        ESPEnabled = not ESPEnabled
+        espButton.Text = ESPEnabled and "ESP: ON" or "ESP: OFF"
+        espButton.TextColor3 = ESPEnabled and Color3.fromRGB(0,255,120) or Color3.fromRGB(255,100,100)
+    end)
+    teamButton.MouseButton1Click:Connect(function()
+        TeamCheck = not TeamCheck
+        teamButton.Text = TeamCheck and "Team Check: ON" or "Team Check: OFF"
+        teamButton.TextColor3 = TeamCheck and Color3.fromRGB(0,255,120) or Color3.fromRGB(255,255,120)
+    end)
+    autoSnapButton.MouseButton1Click:Connect(function()
+        AutoSnap = not AutoSnap
+        autoSnapButton.Text = AutoSnap and "Auto Snap: ON" or "Auto Snap: OFF"
+        autoSnapButton.TextColor3 = AutoSnap and Color3.fromRGB(0,255,120) or Color3.fromRGB(255,100,100)
+    end)
+    aimbotButton.MouseButton1Click:Connect(function()
+        AimbotEnabled = not AimbotEnabled
+        aimbotButton.Text = AimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
+        aimbotButton.TextColor3 = AimbotEnabled and Color3.fromRGB(0,255,120) or Color3.fromRGB(255,100,100)
+    end)
+
+    -- FOV Slider Logic
+    local draggingFOV = false
+    fovSliderBG.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingFOV = true
+        end
+    end)
+    fovSliderBG.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingFOV = false
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if draggingFOV and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local relX = math.clamp((input.Position.X - fovSliderBG.AbsolutePosition.X) / fovSliderBG.AbsoluteSize.X, 0, 1)
+            FOVRadius = math.floor(40 + relX * 200) -- Min 40, Max 240
+            fovSliderBar.Size = UDim2.new((FOVRadius-40)/200, 0, 1, 0)
+            fovLabel.Text = "FOV Radius: " .. tostring(FOVRadius)
+        end
+    end)
+
+    -- Max Distance Slider Logic
+    local draggingDist = false
+    distSliderBG.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingDist = true
+        end
+    end)
+    distSliderBG.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingDist = false
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if draggingDist and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local relX = math.clamp((input.Position.X - distSliderBG.AbsolutePosition.X) / distSliderBG.AbsoluteSize.X, 0, 1)
+            MaxDetectionDistance = math.floor(100 + relX * 4900) -- Min 100, Max 5000
+            distSliderBar.Size = UDim2.new((MaxDetectionDistance-100)/4900, 0, 1, 0)
+            distLabel.Text = "Max Distance: " .. tostring(MaxDetectionDistance)
+        end
+    end)
+
+    -- Team Check Helper
+    local function isSameTeam(player)
+        if LocalPlayer.Team and player.Team then
+            return LocalPlayer.Team == player.Team
+        end
+        return false -- Default to not same team if teams are nil or different
+    end
+
+    local function inMaxDistance(targetPart)
+        if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") or not targetPart then return false end
+        return (LocalPlayer.Character.HumanoidRootPart.Position - targetPart.Position).Magnitude <= MaxDetectionDistance
+    end
+
+    -- DOT ESP
+    local function createDotESP(player)
+        local function setup()
+            if player.Character and player.Character:FindFirstChild("Head") then
+                if player.Character:FindFirstChild("ESP_DOT") then return end
+                local billboard = Instance.new("BillboardGui")
+                billboard.Name = "ESP_DOT"
+                billboard.Size = UDim2.new(0, 7, 0, 7)
+                billboard.Adornee = player.Character.Head
+                billboard.AlwaysOnTop = true
+                billboard.LightInfluence = 0
+                billboard.Parent = player.Character
+
+                local dot = Instance.new("Frame", billboard)
+                dot.Size = UDim2.new(1, 0, 1, 0)
+                dot.BackgroundColor3 = Color3.fromRGB(0, 255, 120) -- Default green
+                dot.BackgroundTransparency = 0
+                dot.BorderSizePixel = 0
+                local dotCorner = Instance.new("UICorner", dot)
+                dotCorner.CornerRadius = UDim.new(1, 0)
+            end
+        end
+        if player.Character then
+            setup()
+        end
+        player.CharacterAdded:Connect(function(character) -- Connect to new character
+            task.wait(0.5) -- Wait for head to potentially load
+            setup()
+        end)
+    end
+
+    local function removeDotESP(player)
+        if player.Character then
+            local espDot = player.Character:FindFirstChild("ESP_DOT")
+            if espDot then
+                espDot:Destroy()
+            end
+        end
+    end
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            createDotESP(player)
+        end
+    end
+    Players.PlayerAdded:Connect(function(player)
+        if player ~= LocalPlayer then
+            createDotESP(player)
+        end
+    end)
+    Players.PlayerRemoving:Connect(function(player)
+        removeDotESP(player)
+    end)
+
+    -- Get Closest Target
+    local function getClosestTarget()
+        local closest = nil
+        local shortestDistance = math.huge
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer
+                and player.Character
+                and player.Character:FindFirstChild("Humanoid")
+                and player.Character.Humanoid.Health > 0
+                and player.Character:FindFirstChild("Head")
+                and player.Character:FindFirstChild("HumanoidRootPart")
+            then
+                if TeamCheck and isSameTeam(player) then
+                    continue
+                end
+                if not inMaxDistance(player.Character.HumanoidRootPart) then
+                    continue
+                end
+                local head = player.Character.Head
+                local pos, onScreen = Camera:WorldToViewportPoint(head.Position)
+                if onScreen then
+                    local distance = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(pos.X, pos.Y)).Magnitude
+                    if distance < shortestDistance and distance < FOVRadius then
+                        shortestDistance = distance
+                        closest = head
+                    end
+                end
+            end
+        end
+        return closest
+    end
+
+    -- MAIN LOOP: FOV CIRCLE POS, ESP, AIMBOT (TENGAH CROSSHAIR)
+    RunService.RenderStepped:Connect(function()
+        if not isActive or not screenGui or not screenGui.Parent then return end -- Check if GUI is still valid
+
+        -- FOV CIRCLE
+        if fovFrame and fovFrame.Parent then
+             fovFrame.Position = UDim2.new(0, Mouse.X, 0, Mouse.Y)
+             fovFrame.Size = UDim2.new(0, FOVRadius * 2, 0, FOVRadius * 2)
+             fovFrame.Visible = not isMinimized
+        end
+
+
+        -- ESP Display (dot)
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local esp = player.Character:FindFirstChild("ESP_DOT")
+                if esp then
+                    esp.Enabled = ESPEnabled and not isMinimized and isActive
+                    -- Update dot color based on team (example, adjust colors as needed)
+                    local dotFrame = esp:FindFirstChildWhichIsA("Frame")
+                    if dotFrame then
+                        if TeamCheck and isSameTeam(player) then
+                            dotFrame.BackgroundColor3 = Color3.fromRGB(0, 150, 255) -- Friendly color
+                        else
+                            dotFrame.BackgroundColor3 = Color3.fromRGB(255, 60, 60)   -- Enemy color
+                        end
+                         if not inMaxDistance(player.Character:FindFirstChild("HumanoidRootPart")) then
+                             esp.Enabled = false
+                         end
+                    end
+                end
+            end
+        end
+
+        -- Aimbot: HEAD PASTI DI TENGAH LAYAR
+        if ((AutoSnap and AimbotEnabled) or (not AutoSnap and AimbotEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2)))
+            and not isMinimized and isActive then
+            local target = getClosestTarget()
+            if target and target.Parent then -- Ensure target is still valid
+                local currentCFrame = Camera.CFrame
+                local targetPosition = target.Position
+                local newCFrame = CFrame.new(currentCFrame.Position, targetPosition)
+                -- Smooth aim transition (optional, can be demanding)
+                -- Camera.CFrame = currentCFrame:Lerp(newCFrame, 0.2) 
+                Camera.CFrame = newCFrame -- Direct snap
+            end
+        end
+    end)
+end -- End of runArsenalScript function
+
+
+-- EXECUTE KEY SYSTEM UI
+createKeySystemUI()
