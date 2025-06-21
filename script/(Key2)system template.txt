@@ -1,0 +1,277 @@
+--// BloxHub Key System - RF Online Style
+
+-- SERVICES
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local CoreGui = game:GetService("CoreGui")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- CONFIG
+local keyURL = "https://raw.githubusercontent.com/ArtChivegroup/Jinx/main/Jinx/files/Sync"
+local getKeyPage = "https://bloxhub.work.gd/keyblox.html"
+local coverImageURL = "rbxassetid://117156163912338" -- AssetId hasil upload ke Roblox
+
+-- VARIABLES
+local uiVisible = true
+
+-- FUNCTIONS
+local function fetchKey()
+    local success, response = pcall(function()
+        return game:HttpGet(keyURL)
+    end)
+    if success then
+        return string.match(response, "%S+")
+    else
+        warn("Failed to fetch key!")
+        return nil
+    end
+end
+
+local function createUI()
+    local ScreenGui = Instance.new("ScreenGui", CoreGui)
+    ScreenGui.Name = "BloxHubKeySystemRFStyle"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    -- Main Window Frame (Inspired by RF Online login window)
+    local MainFrame = Instance.new("Frame", ScreenGui)
+    MainFrame.Size = UDim2.new(0, 750, 0, 450)
+    MainFrame.Position = UDim2.new(0.5, -375, 0.5, -225)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(35, 45, 50)
+    MainFrame.BorderSizePixel = 1
+    MainFrame.BorderColor3 = Color3.fromRGB(20, 25, 30)
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    MainFrame.ClipsDescendants = true
+
+    -- Title Bar
+    local TitleBar = Instance.new("Frame", MainFrame)
+    TitleBar.Size = UDim2.new(1, 0, 0, 40)
+    TitleBar.BackgroundColor3 = Color3.fromRGB(25, 30, 35)
+    TitleBar.BorderSizePixel = 0
+    TitleBar.ZIndex = 2
+
+    local LogoText = Instance.new("TextLabel", TitleBar)
+    LogoText.Size = UDim2.new(0, 200, 1, 0)
+    LogoText.Position = UDim2.new(0, 15, 0, 0)
+    LogoText.BackgroundTransparency = 1
+    LogoText.Font = Enum.Font.GothamSemibold
+    LogoText.Text = "BLOXHUB"
+    LogoText.TextColor3 = Color3.fromRGB(210, 215, 220)
+    LogoText.TextSize = 20
+    LogoText.TextXAlignment = Enum.TextXAlignment.Left
+    LogoText.TextYAlignment = Enum.TextYAlignment.Center
+
+    local ExitButton = Instance.new("TextButton", TitleBar)
+    ExitButton.Size = UDim2.new(0, 30, 0, 30)
+    ExitButton.Position = UDim2.new(1, -35, 0.5, -15)
+    ExitButton.BackgroundColor3 = Color3.fromRGB(25, 30, 35)
+    ExitButton.BorderSizePixel = 0
+    ExitButton.Font = Enum.Font.SourceSansBold
+    ExitButton.Text = "✕"
+    ExitButton.TextColor3 = Color3.fromRGB(150, 155, 160)
+    ExitButton.TextSize = 22
+    ExitButton.ZIndex = 3
+
+    local MinimizeButton = Instance.new("TextButton", TitleBar)
+    MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
+    MinimizeButton.Position = UDim2.new(1, -70, 0.5, -15)
+    MinimizeButton.BackgroundColor3 = Color3.fromRGB(25, 30, 35)
+    MinimizeButton.BorderSizePixel = 0
+    MinimizeButton.Font = Enum.Font.SourceSansBold
+    MinimizeButton.Text = "—"
+    MinimizeButton.TextColor3 = Color3.fromRGB(150, 155, 160)
+    MinimizeButton.TextSize = 22
+    MinimizeButton.ZIndex = 3
+
+    -- Hover effects for window buttons
+    local function setButtonHover(button, hoverColor, defaultColor)
+        button.MouseEnter:Connect(function() button.TextColor3 = hoverColor end)
+        button.MouseLeave:Connect(function() button.TextColor3 = defaultColor end)
+    end
+    setButtonHover(ExitButton, Color3.fromRGB(231, 76, 60), Color3.fromRGB(150, 155, 160))
+    setButtonHover(MinimizeButton, Color3.fromRGB(200, 200, 200), Color3.fromRGB(150, 155, 160))
+
+    -- Left Pane: Cover Image
+    local CoverImage = Instance.new("ImageLabel", MainFrame)
+    CoverImage.Size = UDim2.new(0.55, 0, 1, -TitleBar.Size.Y.Offset)
+    CoverImage.Position = UDim2.new(0, 0, 0, TitleBar.Size.Y.Offset)
+    CoverImage.BackgroundColor3 = Color3.fromRGB(20, 25, 30)
+    CoverImage.Image = coverImageURL
+    CoverImage.ScaleType = Enum.ScaleType.Crop
+    CoverImage.BorderSizePixel = 0
+    CoverImage.ZIndex = 1
+
+    -- Right Pane: Form
+    local FormPanel = Instance.new("Frame", MainFrame)
+    FormPanel.Size = UDim2.new(0.45, 0, 1, -TitleBar.Size.Y.Offset)
+    FormPanel.Position = UDim2.new(0.55, 0, 0, TitleBar.Size.Y.Offset)
+    FormPanel.BackgroundColor3 = Color3.fromRGB(35, 45, 50)
+    FormPanel.BorderSizePixel = 0
+    FormPanel.ZIndex = 1
+
+    local FormTitle = Instance.new("TextLabel", FormPanel)
+    FormTitle.Size = UDim2.new(1, -80, 0, 50)
+    FormTitle.Position = UDim2.new(0, 40, 0, 40)
+    FormTitle.BackgroundTransparency = 1
+    FormTitle.Font = Enum.Font.GothamSemibold
+    FormTitle.Text = "Key System"
+    FormTitle.TextColor3 = Color3.fromRGB(220, 225, 230)
+    FormTitle.TextSize = 28
+    FormTitle.TextXAlignment = Enum.TextXAlignment.Left
+    FormTitle.ZIndex = 2
+
+    local KeyLabel = Instance.new("TextLabel", FormPanel)
+    KeyLabel.Size = UDim2.new(1, -80, 0, 20)
+    KeyLabel.Position = UDim2.new(0, 40, 0, 90)
+    KeyLabel.BackgroundTransparency = 1
+    KeyLabel.Font = Enum.Font.Gotham
+    KeyLabel.Text = "Key"
+    KeyLabel.TextColor3 = Color3.fromRGB(160, 170, 175)
+    KeyLabel.TextSize = 14
+    KeyLabel.TextXAlignment = Enum.TextXAlignment.Left
+    KeyLabel.ZIndex = 2
+
+    local KeyInput = Instance.new("TextBox", FormPanel)
+    KeyInput.Size = UDim2.new(1, -80, 0, 40)
+    KeyInput.Position = UDim2.new(0, 40, 0, 115)
+    KeyInput.BackgroundColor3 = Color3.fromRGB(28, 38, 43)
+    KeyInput.BorderSizePixel = 1
+    KeyInput.BorderColor3 = Color3.fromRGB(50, 60, 65)
+    KeyInput.Font = Enum.Font.Gotham
+    KeyInput.PlaceholderText = "Enter your key"
+    KeyInput.PlaceholderColor3 = Color3.fromRGB(100, 110, 115)
+    KeyInput.Text = ""
+    KeyInput.TextColor3 = Color3.fromRGB(210, 215, 220)
+    KeyInput.TextSize = 16
+    KeyInput.ClearTextOnFocus = false
+    KeyInput.ZIndex = 2
+    local KeyInputPadding = Instance.new("UIPadding", KeyInput)
+    KeyInputPadding.PaddingLeft = UDim.new(0, 10)
+    KeyInputPadding.PaddingRight = UDim.new(0, 10)
+
+    local SubmitButton = Instance.new("TextButton", FormPanel)
+    SubmitButton.Size = UDim2.new(1, -80, 0, 40)
+    SubmitButton.Position = UDim2.new(0, 40, 0, 165)
+    SubmitButton.BackgroundColor3 = Color3.fromRGB(40, 50, 55)
+    SubmitButton.BorderSizePixel = 1
+    SubmitButton.BorderColor3 = Color3.fromRGB(60, 70, 75)
+    SubmitButton.Font = Enum.Font.GothamSemibold
+    SubmitButton.Text = "SUBMIT KEY"
+    SubmitButton.TextColor3 = Color3.fromRGB(220, 225, 230)
+    SubmitButton.TextSize = 16
+    SubmitButton.ZIndex = 2
+
+    local GetKeyBrowserButton = Instance.new("TextButton", FormPanel)
+    GetKeyBrowserButton.Size = UDim2.new(0.5, -45, 0, 35)
+    GetKeyBrowserButton.Position = UDim2.new(0, 40, 0, 215)
+    GetKeyBrowserButton.BackgroundColor3 = Color3.fromRGB(50, 60, 65)
+    GetKeyBrowserButton.BorderSizePixel = 1
+    GetKeyBrowserButton.BorderColor3 = Color3.fromRGB(70, 80, 85)
+    GetKeyBrowserButton.Font = Enum.Font.Gotham
+    GetKeyBrowserButton.Text = "Get Key (Browser)"
+    GetKeyBrowserButton.TextColor3 = Color3.fromRGB(180, 190, 195)
+    GetKeyBrowserButton.TextSize = 13
+    GetKeyBrowserButton.ZIndex = 2
+
+    local GetKeyClipboardButton = Instance.new("TextButton", FormPanel)
+    GetKeyClipboardButton.Size = UDim2.new(0.5, -45, 0, 35)
+    GetKeyClipboardButton.Position = UDim2.new(0.5, 5, 0, 215)
+    GetKeyClipboardButton.BackgroundColor3 = Color3.fromRGB(50, 60, 65)
+    GetKeyClipboardButton.BorderSizePixel = 1
+    GetKeyClipboardButton.BorderColor3 = Color3.fromRGB(70, 80, 85)
+    GetKeyClipboardButton.Font = Enum.Font.Gotham
+    GetKeyClipboardButton.Text = "Copy Link"
+    GetKeyClipboardButton.TextColor3 = Color3.fromRGB(180, 190, 195)
+    GetKeyClipboardButton.TextSize = 13
+    GetKeyClipboardButton.ZIndex = 2
+
+    -- Button Hover Effects (Form Buttons)
+    local function setFormButtonHover(button)
+        local originalColor = button.BackgroundColor3
+        local hoverColor = originalColor:Lerp(Color3.new(1,1,1), 0.1)
+        button.MouseEnter:Connect(function() button.BackgroundColor3 = hoverColor end)
+        button.MouseLeave:Connect(function() button.BackgroundColor3 = originalColor end)
+    end
+    setFormButtonHover(SubmitButton)
+    setFormButtonHover(GetKeyBrowserButton)
+    setFormButtonHover(GetKeyClipboardButton)
+
+    -- Event Connections
+    MinimizeButton.MouseButton1Click:Connect(function()
+        uiVisible = not uiVisible
+        MainFrame.Visible = uiVisible
+    end)
+
+    ExitButton.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
+
+    GetKeyBrowserButton.MouseButton1Click:Connect(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = "BloxHub",
+            Text = "Opening key page in browser...",
+            Duration = 5
+        })
+        if syn and syn.request then pcall(function() syn.request({Url = getKeyPage, Method = "GET"}) end)
+        elseif KRNL_LOADED and KRNL_LOADED.OpenURL then pcall(function() KRNL_LOADED:OpenURL(getKeyPage) end)
+        elseif PROXO_LOADED and PROXO_LOADED.OpenURL then pcall(function() PROXO_LOADED:OpenURL(getKeyPage) end)
+        elseif FLUXUS_LOADED and FLUXUS_LOADED.OpenURL then pcall(function() FLUXUS_LOADED:OpenURL(getKeyPage) end)
+        elseif request then pcall(function() request({Url = getKeyPage, Method = "GET"}) end)
+        elseif identifyexecutor then
+            local executorName, _ = identifyexecutor()
+            if string.find(string.lower(executorName or ""), "synapse") then pcall(function() syn.request({Url = getKeyPage, Method = "GET"}) end)
+            else
+                setclipboard(getKeyPage)
+                StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Browser open not supported. Link copied!", Duration = 5 })
+            end
+        else
+            setclipboard(getKeyPage)
+            StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Browser open not supported. Link copied to clipboard!", Duration = 5 })
+        end
+    end)
+
+    GetKeyClipboardButton.MouseButton1Click:Connect(function()
+        setclipboard(getKeyPage)
+        StarterGui:SetCore("SendNotification", {
+            Title = "BloxHub",
+            Text = "Link copied to clipboard!",
+            Duration = 5
+        })
+    end)
+
+    SubmitButton.MouseButton1Click:Connect(function()
+        local inputKey = KeyInput.Text
+        if string.gsub(inputKey, "%s", "") == "" then
+             StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Please enter a key!", Duration = 3 })
+            return
+        end
+
+        local currentKey = fetchKey()
+        if not currentKey then
+            StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Error fetching key. Try again.", Duration = 5 })
+            return
+        end
+
+        if inputKey == currentKey then
+            StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Key Verified! Loading...", Duration = 3 })
+            wait(1)
+            ScreenGui:Destroy()
+            -- ✅ INSERT YOUR SCRIPT HERE
+            print("Key system passed. Main script would load here.")
+            -- Example: loadstring(game:HttpGet("YOUR SCRIPT URL HERE"))()
+        else
+            StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Invalid Key! Please try again.", Duration = 3 })
+            KeyInput.Text = ""
+        end
+    end)
+end
+
+-- EXECUTE
+local success, err = pcall(createUI)
+if not success then
+    warn("BloxHub Key System UI (RF Style) failed to load:", err)
+end
