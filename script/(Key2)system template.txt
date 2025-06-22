@@ -1,4 +1,4 @@
---// BloxHub Key System - RF Online Style
+--// BloxHub Key System - RF Online Style + Local Key Expiry + HWID Checking + Hide GUI on Auto Login
 
 -- SERVICES
 local HttpService = game:GetService("HttpService")
@@ -14,8 +14,10 @@ local keyURL = "https://raw.githubusercontent.com/ArtChivegroup/Jinx/main/Jinx/f
 local getKeyPage = "https://bloxhub.work.gd/keyblox.html"
 local coverImageURL = "rbxassetid://117156163912338" -- AssetId hasil upload ke Roblox
 
--- VARIABLES
-local uiVisible = true
+-- LOCAL KEY STORAGE
+local keyFile = "bloxhub.key"
+local timeFile = "bloxhub_time.txt"
+local hour = 60 * 60
 
 -- FUNCTIONS
 local function fetchKey()
@@ -30,13 +32,29 @@ local function fetchKey()
     end
 end
 
-local function createUI()
+local function getSavedKey()
+    if isfile and isfile(keyFile) and isfile(timeFile) then
+        local savedTime = tonumber(readfile(timeFile))
+        if savedTime and (os.time() - savedTime) < hour then
+            return readfile(keyFile)
+        end
+    end
+    return nil
+end
+
+local function saveKey(key)
+    if writefile then
+        writefile(keyFile, key)
+        writefile(timeFile, tostring(os.time()))
+    end
+end
+
+local function createUI(successCallback)
     local ScreenGui = Instance.new("ScreenGui", CoreGui)
     ScreenGui.Name = "BloxHubKeySystemRFStyle"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- Main Window Frame (Inspired by RF Online login window)
     local MainFrame = Instance.new("Frame", ScreenGui)
     MainFrame.Size = UDim2.new(0, 750, 0, 450)
     MainFrame.Position = UDim2.new(0.5, -375, 0.5, -225)
@@ -47,7 +65,6 @@ local function createUI()
     MainFrame.Draggable = true
     MainFrame.ClipsDescendants = true
 
-    -- Title Bar
     local TitleBar = Instance.new("Frame", MainFrame)
     TitleBar.Size = UDim2.new(1, 0, 0, 40)
     TitleBar.BackgroundColor3 = Color3.fromRGB(25, 30, 35)
@@ -87,7 +104,6 @@ local function createUI()
     MinimizeButton.TextSize = 22
     MinimizeButton.ZIndex = 3
 
-    -- Hover effects for window buttons
     local function setButtonHover(button, hoverColor, defaultColor)
         button.MouseEnter:Connect(function() button.TextColor3 = hoverColor end)
         button.MouseLeave:Connect(function() button.TextColor3 = defaultColor end)
@@ -95,7 +111,6 @@ local function createUI()
     setButtonHover(ExitButton, Color3.fromRGB(231, 76, 60), Color3.fromRGB(150, 155, 160))
     setButtonHover(MinimizeButton, Color3.fromRGB(200, 200, 200), Color3.fromRGB(150, 155, 160))
 
-    -- Left Pane: Cover Image
     local CoverImage = Instance.new("ImageLabel", MainFrame)
     CoverImage.Size = UDim2.new(0.55, 0, 1, -TitleBar.Size.Y.Offset)
     CoverImage.Position = UDim2.new(0, 0, 0, TitleBar.Size.Y.Offset)
@@ -105,7 +120,6 @@ local function createUI()
     CoverImage.BorderSizePixel = 0
     CoverImage.ZIndex = 1
 
-    -- Right Pane: Form
     local FormPanel = Instance.new("Frame", MainFrame)
     FormPanel.Size = UDim2.new(0.45, 0, 1, -TitleBar.Size.Y.Offset)
     FormPanel.Position = UDim2.new(0.55, 0, 0, TitleBar.Size.Y.Offset)
@@ -123,6 +137,18 @@ local function createUI()
     FormTitle.TextSize = 28
     FormTitle.TextXAlignment = Enum.TextXAlignment.Left
     FormTitle.ZIndex = 2
+
+    -- HWID/Checking Label
+    local CheckingLabel = Instance.new("TextLabel", FormPanel)
+    CheckingLabel.Size = UDim2.new(1, -80, 0, 20)
+    CheckingLabel.Position = UDim2.new(0, 40, 0, 70)
+    CheckingLabel.BackgroundTransparency = 1
+    CheckingLabel.Font = Enum.Font.GothamSemibold
+    CheckingLabel.Text = ""
+    CheckingLabel.TextColor3 = Color3.fromRGB(255, 185, 80)
+    CheckingLabel.TextSize = 14
+    CheckingLabel.TextXAlignment = Enum.TextXAlignment.Left
+    CheckingLabel.ZIndex = 2
 
     local KeyLabel = Instance.new("TextLabel", FormPanel)
     KeyLabel.Size = UDim2.new(1, -80, 0, 20)
@@ -189,7 +215,6 @@ local function createUI()
     GetKeyClipboardButton.TextSize = 13
     GetKeyClipboardButton.ZIndex = 2
 
-    -- Button Hover Effects (Form Buttons)
     local function setFormButtonHover(button)
         local originalColor = button.BackgroundColor3
         local hoverColor = originalColor:Lerp(Color3.new(1,1,1), 0.1)
@@ -200,10 +225,8 @@ local function createUI()
     setFormButtonHover(GetKeyBrowserButton)
     setFormButtonHover(GetKeyClipboardButton)
 
-    -- Event Connections
     MinimizeButton.MouseButton1Click:Connect(function()
-        uiVisible = not uiVisible
-        MainFrame.Visible = uiVisible
+        MainFrame.Visible = not MainFrame.Visible
     end)
 
     ExitButton.MouseButton1Click:Connect(function()
@@ -246,7 +269,7 @@ local function createUI()
     SubmitButton.MouseButton1Click:Connect(function()
         local inputKey = KeyInput.Text
         if string.gsub(inputKey, "%s", "") == "" then
-             StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Please enter a key!", Duration = 3 })
+            StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Please enter a key!", Duration = 3 })
             return
         end
 
@@ -257,22 +280,49 @@ local function createUI()
         end
 
         if inputKey == currentKey then
-            StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Key Verified! Loading...", Duration = 3 })
+            StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Key Verified! Loading...", Duration = 1 })
+            saveKey(inputKey)
             wait(1)
             ScreenGui:Destroy()
-            -- ✅ INSERT YOUR SCRIPT HERE
-            loadstring(game:HttpGet("url"))()
-            print("Key system passed. Main script would load here.")
-    
+            if successCallback then successCallback() end
         else
             StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Invalid Key! Please try again.", Duration = 3 })
             KeyInput.Text = ""
         end
     end)
+
+    return ScreenGui, CheckingLabel, KeyInput
 end
 
--- EXECUTE
-local success, err = pcall(createUI)
-if not success then
-    warn("BloxHub Key System UI (RF Style) failed to load:", err)
+-- MAIN EXECUTE (GUI ONLY IF NEEDED, AUTO HWID CHECK)
+local function mainScript()
+    -- Ganti dengan script utama kamu
+    print("Key system passed. Main script would load here.")
+    loadstring(game:HttpGet("url"))()
+
+end
+
+local savedKey = getSavedKey()
+if savedKey then
+    -- Tampilkan GUI sebentar untuk checking HWID, lalu langsung hilang jika key valid
+    local gui, checkingLabel, keyInput = createUI(mainScript)
+    checkingLabel.Text = "Checking your key HWID..."
+    keyInput.Text = savedKey
+    task.spawn(function()
+        wait(1)
+        local currentKey = fetchKey()
+        if savedKey == currentKey then
+            StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Auto-Login Success! Loading...", Duration = 1 })
+            saveKey(savedKey)
+            wait(1)
+            gui:Destroy()
+            mainScript()
+        else
+            checkingLabel.Text = ""
+            keyInput.Text = ""
+        end
+    end)
+else
+    -- Tidak ada key valid, tampilkan UI normal
+    createUI(mainScript)
 end
