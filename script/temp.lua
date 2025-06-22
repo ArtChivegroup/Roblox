@@ -9,7 +9,7 @@ local CoreGui = game:GetService("CoreGui")
 
 -- State
 local ESPEnabled = true
-local AimbotEnabled = false
+local AimbotEnabled = true
 local FOVRadius = 180         -- default FOV
 local TeamCheck = false
 local AutoSnap = true
