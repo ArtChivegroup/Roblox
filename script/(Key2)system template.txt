@@ -1,4 +1,4 @@
---// BloxHub Key System - RF Online Style + Local Key Expiry + HWID Checking + Hide GUI on Auto Login
+--// BloxHub Key System
 
 -- SERVICES
 local HttpService = game:GetService("HttpService")
@@ -12,40 +12,192 @@ local LocalPlayer = Players.LocalPlayer
 -- CONFIG
 local keyURL = "https://raw.githubusercontent.com/ArtChivegroup/Jinx/main/Jinx/files/Sync"
 local getKeyPage = "https://bloxhub.work.gd/keyblox.html"
-local coverImageURL = "rbxassetid://117156163912338" -- AssetId hasil upload ke Roblox
+local coverImageURL = "rbxassetid://117156163912338"
+local mainScriptURL = "URL HERE"
 
 -- LOCAL KEY STORAGE
 local keyFile = "bloxhub.key"
 local timeFile = "bloxhub_time.txt"
 local hour = 60 * 60
 
--- FUNCTIONS
-local function fetchKey()
+-- MODERN PROGRESS BAR (thin, elegant, like a launcher)
+local function createModernProgressBar(parent)
+    local barBG = Instance.new("Frame")
+    barBG.Name = "ProgressBarBG"
+    barBG.Size = UDim2.new(1, -80, 0, 8)
+    barBG.Position = UDim2.new(0, 40, 1, -30)
+    barBG.BackgroundColor3 = Color3.fromRGB(44, 54, 65)
+    barBG.BorderSizePixel = 0
+    barBG.ZIndex = 10
+    barBG.Parent = parent
+
+    local barCorner = Instance.new("UICorner", barBG)
+    barCorner.CornerRadius = UDim.new(0, 4)
+
+    local bar = Instance.new("Frame", barBG)
+    bar.Name = "ProgressBar"
+    bar.Size = UDim2.new(0, 0, 1, 0)
+    bar.BackgroundColor3 = Color3.fromRGB(120, 210, 130)
+    bar.BorderSizePixel = 0
+    bar.ZIndex = 11
+
+    local barFillCorner = Instance.new("UICorner", bar)
+    barFillCorner.CornerRadius = UDim.new(0, 4)
+
+    local percentText = Instance.new("TextLabel", barBG)
+    percentText.AnchorPoint = Vector2.new(1, 1)
+    percentText.Position = UDim2.new(1, 0, 0, -10)
+    percentText.Size = UDim2.new(0, 50, 0, 14)
+    percentText.BackgroundTransparency = 1
+    percentText.Font = Enum.Font.GothamSemibold
+    percentText.Text = "0%"
+    percentText.TextColor3 = Color3.fromRGB(160, 255, 180)
+    percentText.TextSize = 12
+    percentText.ZIndex = 12
+
+    local statusText = Instance.new("TextLabel", barBG)
+    statusText.AnchorPoint = Vector2.new(0, 1)
+    statusText.Position = UDim2.new(0, 0, 0, -10)
+    statusText.Size = UDim2.new(1, -60, 0, 14)
+    statusText.BackgroundTransparency = 1
+    statusText.Font = Enum.Font.Gotham
+    statusText.Text = ""
+    statusText.TextColor3 = Color3.fromRGB(220, 230, 220)
+    statusText.TextSize = 12
+    statusText.TextXAlignment = Enum.TextXAlignment.Left
+    statusText.ZIndex = 12
+
+    local function setProgress(percent, msg)
+        percent = math.clamp(percent, 0, 1)
+        bar:TweenSize(UDim2.new(percent, 0, 1, 0), "Out", "Quad", 0.25, true)
+        percentText.Text = tostring(math.floor(percent * 100)).."%"
+        statusText.Text = msg or ""
+    end
+
+    local function destroy()
+        barBG:Destroy()
+    end
+
+    return setProgress, destroy
+end
+
+-- LAUNCHER-STYLE LOADING SCREEN FOR MAIN SCRIPT
+local function showLauncherLoading()
+    local loadingGui = Instance.new("ScreenGui", CoreGui)
+    loadingGui.Name = "BloxHubLauncherLoading"
+    loadingGui.ResetOnSpawn = false
+    loadingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local overlay = Instance.new("Frame", loadingGui)
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.BackgroundTransparency = 0.2
+    overlay.BackgroundColor3 = Color3.fromRGB(20, 25, 30)
+    overlay.ZIndex = 30
+
+    local panel = Instance.new("Frame", overlay)
+    panel.AnchorPoint = Vector2.new(0.5, 0.5)
+    panel.Position = UDim2.new(0.5, 0, 0.5, 0)
+    panel.Size = UDim2.new(0, 340, 0, 64)
+    panel.BackgroundColor3 = Color3.fromRGB(31, 39, 48)
+    panel.BorderSizePixel = 0
+    panel.ZIndex = 32
+
+    local panelCorner = Instance.new("UICorner", panel)
+    panelCorner.CornerRadius = UDim.new(0, 18)
+
+    local logo = Instance.new("ImageLabel", panel)
+    logo.Image = coverImageURL
+    logo.Size = UDim2.new(0, 44, 0, 44)
+    logo.Position = UDim2.new(0, 16, 0.5, -22)
+    logo.BackgroundTransparency = 1
+    logo.ZIndex = 33
+
+    local title = Instance.new("TextLabel", panel)
+    title.Size = UDim2.new(1, -80, 0, 24)
+    title.Position = UDim2.new(0, 72, 0, 10)
+    title.BackgroundTransparency = 1
+    title.Font = Enum.Font.GothamBold
+    title.Text = "Loading BloxHub"
+    title.TextColor3 = Color3.fromRGB(180, 255, 200)
+    title.TextSize = 18
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.ZIndex = 34
+
+    local loadingStatus = Instance.new("TextLabel", panel)
+    loadingStatus.Size = UDim2.new(1, -80, 0, 18)
+    loadingStatus.Position = UDim2.new(0, 72, 0, 32)
+    loadingStatus.BackgroundTransparency = 1
+    loadingStatus.Font = Enum.Font.Gotham
+    loadingStatus.Text = "Preparing..."
+    loadingStatus.TextColor3 = Color3.fromRGB(220, 230, 220)
+    loadingStatus.TextSize = 13
+    loadingStatus.TextXAlignment = Enum.TextXAlignment.Left
+    loadingStatus.ZIndex = 34
+
+    local barBG = Instance.new("Frame", panel)
+    barBG.Size = UDim2.new(1, -32, 0, 8)
+    barBG.Position = UDim2.new(0, 16, 1, -16)
+    barBG.BackgroundColor3 = Color3.fromRGB(44, 54, 65)
+    barBG.BorderSizePixel = 0
+    barBG.ZIndex = 34
+    local barCorner = Instance.new("UICorner", barBG)
+    barCorner.CornerRadius = UDim.new(0, 4)
+
+    local bar = Instance.new("Frame", barBG)
+    bar.Size = UDim2.new(0, 0, 1, 0)
+    bar.BackgroundColor3 = Color3.fromRGB(120, 210, 130)
+    bar.BorderSizePixel = 0
+    bar.ZIndex = 35
+    local barFillCorner = Instance.new("UICorner", bar)
+    barFillCorner.CornerRadius = UDim.new(0, 4)
+
+    local function setProgress(percent, msg)
+        percent = math.clamp(percent, 0, 1)
+        bar:TweenSize(UDim2.new(percent, 0, 1, 0), "Out", "Quad", 0.25, true)
+        loadingStatus.Text = msg or ""
+    end
+
+    local function destroy()
+        loadingGui:Destroy()
+    end
+
+    return setProgress, destroy
+end
+
+-- LOGIC FUNCTIONS
+local function fetchKey(setProgress)
+    if setProgress then setProgress(0.10, "Fetching key from server...") end
     local success, response = pcall(function()
         return game:HttpGet(keyURL)
     end)
     if success then
+        if setProgress then setProgress(0.35, "Key fetched successfully.") end
         return string.match(response, "%S+")
     else
         warn("Failed to fetch key!")
+        if setProgress then setProgress(0, "Failed to fetch key!") end
         return nil
     end
 end
 
-local function getSavedKey()
+local function getSavedKey(setProgress)
+    if setProgress then setProgress(0.08, "Checking local key...") end
     if isfile and isfile(keyFile) and isfile(timeFile) then
         local savedTime = tonumber(readfile(timeFile))
         if savedTime and (os.time() - savedTime) < hour then
+            if setProgress then setProgress(0.2, "Valid local key found.") end
             return readfile(keyFile)
         end
     end
+    if setProgress then setProgress(0.08, "No valid local key found.") end
     return nil
 end
 
-local function saveKey(key)
+local function saveKey(key, setProgress)
     if writefile then
         writefile(keyFile, key)
         writefile(timeFile, tostring(os.time()))
+        if setProgress then setProgress(0.90, "Saving key...") end
     end
 end
 
@@ -215,6 +367,8 @@ local function createUI(successCallback)
     GetKeyClipboardButton.TextSize = 13
     GetKeyClipboardButton.ZIndex = 2
 
+    local setProgress, destroyProgressBar = createModernProgressBar(FormPanel)
+
     local function setFormButtonHover(button)
         local originalColor = button.BackgroundColor3
         local hoverColor = originalColor:Lerp(Color3.new(1,1,1), 0.1)
@@ -267,62 +421,102 @@ local function createUI(successCallback)
     end)
 
     SubmitButton.MouseButton1Click:Connect(function()
+        setProgress(0.1, "Processing key...")
         local inputKey = KeyInput.Text
         if string.gsub(inputKey, "%s", "") == "" then
             StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Please enter a key!", Duration = 3 })
+            setProgress(0, "Key is empty.")
             return
         end
 
-        local currentKey = fetchKey()
+        setProgress(0.3, "Fetching server key...")
+        local currentKey = fetchKey(setProgress)
         if not currentKey then
             StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Error fetching key. Try again.", Duration = 5 })
+            setProgress(0, "Failed to fetch key.")
             return
         end
 
+        setProgress(0.7, "Checking key validity...")
         if inputKey == currentKey then
             StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Key Verified! Loading...", Duration = 1 })
-            saveKey(inputKey)
-            wait(1)
+            saveKey(inputKey, setProgress)
+            setProgress(1, "Key is valid! Continuing...")
+            wait(0.5)
             ScreenGui:Destroy()
             if successCallback then successCallback() end
         else
             StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Invalid Key! Please try again.", Duration = 3 })
+            setProgress(0, "Wrong key.")
             KeyInput.Text = ""
         end
     end)
 
-    return ScreenGui, CheckingLabel, KeyInput
+    return ScreenGui, CheckingLabel, KeyInput, setProgress, destroyProgressBar
 end
 
--- MAIN EXECUTE (GUI ONLY IF NEEDED, AUTO HWID CHECK)
 local function mainScript()
-    -- Ganti dengan script utama kamu
-    print("Key system passed. Main script would load here.")
-    loadstring(game:HttpGet("url"))()
-
-end
-
-local savedKey = getSavedKey()
-if savedKey then
-    -- Tampilkan GUI sebentar untuk checking HWID, lalu langsung hilang jika key valid
-    local gui, checkingLabel, keyInput = createUI(mainScript)
-    checkingLabel.Text = "Checking your key HWID..."
-    keyInput.Text = savedKey
-    task.spawn(function()
-        wait(1)
-        local currentKey = fetchKey()
-        if savedKey == currentKey then
-            StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Auto-Login Success! Loading...", Duration = 1 })
-            saveKey(savedKey)
-            wait(1)
-            gui:Destroy()
-            mainScript()
-        else
-            checkingLabel.Text = ""
-            keyInput.Text = ""
-        end
+    -- LAUNCHER STYLE LOADING
+    local setProgress, destroyLoading = showLauncherLoading()
+    setProgress(0.15, "Fetching script...")
+    local success, result = pcall(function()
+        return game:HttpGet(mainScriptURL)
     end)
-else
-    -- Tidak ada key valid, tampilkan UI normal
-    createUI(mainScript)
+    if success and type(result) == "string" and #result > 0 then
+        setProgress(0.8, "Executing script...")
+        local ok, loadErr = pcall(function()
+            loadstring(result)()
+        end)
+        if ok then
+            setProgress(1, "Done!")
+        else
+            setProgress(1, "Script Error!")
+            StarterGui:SetCore("SendNotification", {
+                Title = "BloxHub",
+                Text = "Script Error: "..tostring(loadErr),
+                Duration = 5
+            })
+        end
+    else
+        setProgress(1, "Failed to fetch script!")
+        StarterGui:SetCore("SendNotification", {
+            Title = "BloxHub",
+            Text = "Failed to fetch main script!",
+            Duration = 5
+        })
+    end
+    wait(1)
+    destroyLoading()
 end
+
+local function runSystem()
+    local gui, checkingLabel, keyInput, setProgress, destroyProgressBar = createUI(mainScript)
+    setProgress(0.05, "Initializing key system...")
+    local savedKey = getSavedKey(setProgress)
+    if savedKey then
+        setProgress(0.5, "Auto login, checking HWID...")
+        checkingLabel.Text = "Checking your key HWID..."
+        keyInput.Text = savedKey
+        task.spawn(function()
+            wait(1)
+            setProgress(0.7, "Verifying key with server...")
+            local currentKey = fetchKey(setProgress)
+            if savedKey == currentKey then
+                StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Auto-Login Success! Loading...", Duration = 1 })
+                saveKey(savedKey, setProgress)
+                setProgress(1, "Auto login success!")
+                wait(0.5)
+                gui:Destroy()
+                mainScript()
+            else
+                checkingLabel.Text = ""
+                keyInput.Text = ""
+                setProgress(0, "Auto login key is not valid!")
+            end
+        end)
+    else
+        setProgress(0.2, "No valid local key, please input your key.")
+    end
+end
+
+runSystem()
