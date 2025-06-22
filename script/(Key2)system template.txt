@@ -261,8 +261,9 @@ local function createUI()
             wait(1)
             ScreenGui:Destroy()
             -- ✅ INSERT YOUR SCRIPT HERE
+            loadstring(game:HttpGet("url"))()
             print("Key system passed. Main script would load here.")
-            -- Example: loadstring(game:HttpGet("YOUR SCRIPT URL HERE"))()
+    
         else
             StarterGui:SetCore("SendNotification", { Title = "BloxHub", Text = "Invalid Key! Please try again.", Duration = 3 })
             KeyInput.Text = ""
