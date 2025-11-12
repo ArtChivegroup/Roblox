@@ -1741,3 +1741,4 @@ BloxHub:Initialize()
 -- BloxHub:CreateDefaultExample()
 
 return BloxHub
+return BloxHub:Initialize()
