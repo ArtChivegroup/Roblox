@@ -1,534 +1,803 @@
---[[
-    ═══════════════════════════════════════════════════════════════
-    🧩 BloxHub GUI Template - Complete Usage Examples
-    ═══════════════════════════════════════════════════════════════
-    
-    This file demonstrates all features and API usage of BloxHub
-    Copy any example below to use in your own scripts!
-    
-    Source: https://raw.githubusercontent.com/ArtChivegroup/Roblox/refs/heads/main/script/addon/BloxHubUILibs/source.lua
-]]--
+-- =============================================
+-- BloxHub GUI Framework - Complete Showcase
+-- =============================================
 
--- ═══════════════════════════════════════════════════════════════
--- 📦 EXAMPLE 1: Basic Load
--- ═══════════════════════════════════════════════════════════════
-
-print("Example 1: Basic Load")
-local BloxHub = loadstring(game:HttpGet("https://raw.githubusercontent.com/ArtChivegroup/Roblox/refs/heads/main/script/addon/BloxHubUILibs/source.lua"))()
-print("✅ BloxHub loaded successfully!")
-print("Press Left Alt to toggle GUI")
-
-wait(2) -- Wait to see output
-
--- ═══════════════════════════════════════════════════════════════
--- 📦 EXAMPLE 2: Load with Error Handling
--- ═══════════════════════════════════════════════════════════════
-
-print("\nExample 2: Safe Load with Error Handling")
+-- Load BloxHub dengan error handling lengkap
 local success, BloxHub = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/ArtChivegroup/Roblox/refs/heads/main/script/addon/BloxHubUILibs/source.lua"))()
 end)
 
-if success then
-    print("✅ BloxHub loaded successfully!")
-    print("🎯 GUI is ready to use")
-else
-    warn("❌ Failed to load BloxHub:", BloxHub)
+if not success then
+    warn("Failed to load BloxHub:", BloxHub)
     return
 end
 
-wait(2)
+-- Create main window dengan konfigurasi lengkap
+local Window = BloxHub:CreateWindow("BloxHub Complete Showcase", {
+    Hotkey = Enum.KeyCode.RightControl,
+    Resizable = true
+})
 
--- ═══════════════════════════════════════════════════════════════
--- 🎨 EXAMPLE 3: Custom Theme Colors
--- ═══════════════════════════════════════════════════════════════
+-- Buat semua tab
+local MainTab = Window:CreateTab("Main", {Icon = "🏠"})
+local CombatTab = Window:CreateTab("Combat", {Icon = "⚔️"})
+local VisualTab = Window:CreateTab("Visual", {Icon = "👁️"})
+local PlayerTab = Window:CreateTab("Player", {Icon = "👤"})
+local SettingsTab = Window:CreateTab("Settings", {Icon = "⚙️"})
+local ScriptsTab = Window:CreateTab("Scripts", {Icon = "📜"})
+local TeleportTab = Window:CreateTab("Teleport", {Icon = "📍"})
+local InfoTab = Window:CreateTab("Info", {Icon = "ℹ️"})
 
-print("\nExample 3: Custom Theme")
--- Note: You need to modify before loading, so this is a demo
--- In practice, you'd edit the source or use a modified version
+-- ================================
+-- MAIN TAB - Fitur Utama
+-- ================================
 
-BloxHub:Notify("Theme", "Using custom purple theme!", 3, "info")
+MainTab:AddSection("Main Controls")
 
-wait(2)
+-- Button dengan multiple actions
+MainTab:AddButton("Execute All Features", function()
+    Window:Notify("System", "Executing all features...", 3, "info")
+    wait(0.5)
+    Window:Notify("Combat", "Aimbot activated", 2, "success")
+    wait(0.5)
+    Window:Notify("Visual", "ESP enabled", 2, "success")
+    wait(0.5)
+    Window:Notify("Player", "God mode enabled", 2, "success")
+    wait(0.5)
+    Window:Notify("System", "All features activated!", 3, "success")
+end, {
+    Icon = "🚀",
+    Color = Color3.fromRGB(255, 215, 0)
+})
 
--- ═══════════════════════════════════════════════════════════════
--- 🔔 EXAMPLE 4: Notification System
--- ═══════════════════════════════════════════════════════════════
-
-print("\nExample 4: Notification System")
-
--- Info notification
-BloxHub:Notify("Info", "This is an information message", 3, "info")
-wait(1)
-
--- Success notification
-BloxHub:Notify("Success", "Operation completed successfully!", 3, "success")
-wait(1)
-
--- Warning notification
-BloxHub:Notify("Warning", "This is a warning message", 3, "warning")
-wait(1)
-
--- Error notification
-BloxHub:Notify("Error", "Something went wrong!", 3, "error")
-
-wait(3)
-
--- ═══════════════════════════════════════════════════════════════
--- 🎯 EXAMPLE 5: Creating Custom Buttons
--- ═══════════════════════════════════════════════════════════════
-
-print("\nExample 5: Custom Feature Buttons")
-
--- Simple button
-BloxHub:CreateButton("Noclip", function()
-    print("Noclip button clicked!")
-    BloxHub:Notify("Noclip", "Noclip toggled!", 2, "success")
-end)
-
--- Button with state tracking
-local infiniteJumpEnabled = false
-BloxHub:CreateButton("Infinite Jump", function()
-    infiniteJumpEnabled = not infiniteJumpEnabled
-    local status = infiniteJumpEnabled and "enabled" or "disabled"
-    BloxHub:Notify("Infinite Jump", "Infinite Jump " .. status, 2, 
-        infiniteJumpEnabled and "success" or "info")
-    print("Infinite Jump:", infiniteJumpEnabled)
-end)
-
--- Button with complex logic
-BloxHub:CreateButton("Teleport Lobby", function()
-    local player = game.Players.LocalPlayer
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(0, 50, 0)
-        BloxHub:Notify("Teleport", "Teleported to lobby!", 2, "success")
+-- Toggle untuk auto farm
+local autoFarmToggle = MainTab:AddToggle("Auto Farm", false, function(state)
+    if state then
+        Window:Notify("Auto Farm", "Started farming automatically", 3, "success")
+        spawn(function()
+            while autoFarmToggle:GetValue() do
+                wait(1)
+                -- Simulate farming action
+                print("Farming...")
+            end
+        end)
     else
-        BloxHub:Notify("Error", "Character not found!", 2, "error")
+        Window:Notify("Auto Farm", "Stopped farming", 3, "warning")
     end
 end)
 
-wait(2)
-
--- ═══════════════════════════════════════════════════════════════
--- 🎚️ EXAMPLE 6: Creating Custom Sliders
--- ═══════════════════════════════════════════════════════════════
-
-print("\nExample 6: Custom Sliders")
-
--- Walk Speed Slider
-local speedSlider = BloxHub:CreateSliderAPI(
-    "Walk Speed",
-    16,    -- Min
-    200,   -- Max
-    16,    -- Default
-    function(value)
-        local player = game.Players.LocalPlayer
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid.WalkSpeed = value
-            print("Walk Speed set to:", value)
-        end
+-- Toggle untuk auto click
+local autoClickToggle = MainTab:AddToggle("Auto Click", false, function(state)
+    if state then
+        Window:Notify("Auto Click", "Auto clicking enabled", 2, "success")
+        spawn(function()
+            while autoClickToggle:GetValue() do
+                wait(0.1)
+                -- Simulate clicking
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                wait(0.05)
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, false, game, 1)
+            end
+        end)
+    else
+        Window:Notify("Auto Click", "Auto clicking disabled", 2, "warning")
     end
-)
-
--- Jump Power Slider
-local jumpSlider = BloxHub:CreateSliderAPI(
-    "Jump Power",
-    50,    -- Min
-    300,   -- Max
-    50,    -- Default
-    function(value)
-        local player = game.Players.LocalPlayer
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid.JumpPower = value
-            print("Jump Power set to:", value)
-        end
-    end
-)
-
--- FOV Slider
-local fovSlider = BloxHub:CreateSliderAPI(
-    "Field of View",
-    70,    -- Min
-    120,   -- Max
-    70,    -- Default
-    function(value)
-        workspace.CurrentCamera.FieldOfView = value
-        print("FOV set to:", value)
-    end
-)
-
-wait(2)
-
--- ═══════════════════════════════════════════════════════════════
--- 🎮 EXAMPLE 7: Complete Feature Implementation (ESP)
--- ═══════════════════════════════════════════════════════════════
-
-print("\nExample 7: ESP Implementation")
-
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-
--- ESP Distance Slider
-local espDistance = 1000
-BloxHub:CreateSliderAPI("ESP Distance", 100, 5000, 1000, function(value)
-    espDistance = value
 end)
 
--- Simple ESP Logic (monitoring built-in ESP feature)
-local espConnection
-espConnection = RunService.RenderStepped:Connect(function()
-    if BloxHub.Features.ESP then
-        -- Your ESP rendering code here
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= Players.LocalPlayer and player.Character then
-                local character = player.Character
-                local rootPart = character:FindFirstChild("HumanoidRootPart")
-                
-                if rootPart then
-                    local distance = (Players.LocalPlayer.Character.HumanoidRootPart.Position - rootPart.Position).Magnitude
-                    
-                    if distance <= espDistance then
-                        -- ESP is enabled and player is in range
-                        -- Add your ESP box/text rendering here
-                        -- print("ESP Active for:", player.Name, "Distance:", math.floor(distance))
+-- Slider untuk speed boost
+local speedSlider = MainTab:AddSlider("Speed Boost", 1, 10, 1, function(value)
+    if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16 * value
+    end
+end)
+
+-- Slider untuk jump boost
+local jumpSlider = MainTab:AddSlider("Jump Boost", 1, 10, 1, function(value)
+    if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+        game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50 * value
+    end
+end)
+
+MainTab:AddSection("Quick Actions")
+
+-- Button untuk heal
+MainTab:AddButton("Full Heal", function()
+    if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+        game.Players.LocalPlayer.Character.Humanoid.Health = game.Players.LocalPlayer.Character.Humanoid.MaxHealth
+    end
+    Window:Notify("Heal", "Fully healed!", 2, "success")
+end, {
+    Icon = "💚",
+    Color = Color3.fromRGB(0, 255, 0)
+})
+
+-- Button untuk refill energy
+MainTab:AddButton("Refill Energy", function()
+    Window:Notify("Energy", "Energy refilled!", 2, "success")
+end, {
+    Icon = "⚡",
+    Color = Color3.fromRGB(255, 255, 0)
+})
+
+-- Button untuk clear inventory
+MainTab:AddButton("Clear Inventory", function()
+    Window:Notify("Inventory", "Inventory cleared!", 2, "info")
+end, {
+    Icon = "🗑️",
+    Color = Color3.fromRGB(255, 0, 0)
+})
+
+-- ================================
+-- COMBAT TAB - Fitur Pertarungan
+-- ================================
+
+CombatTab:AddSection("Aimbot")
+
+-- Toggle untuk aimbot
+local aimbotToggle = CombatTab:AddToggle("Aimbot", false, function(state)
+    if state then
+        Window:Notify("Aimbot", "Aimbot enabled", 2, "success")
+        _G.AimbotEnabled = true
+    else
+        Window:Notify("Aimbot", "Aimbot disabled", 2, "warning")
+        _G.AimbotEnabled = false
+    end
+end)
+
+-- Dropdown untuk aimbot target
+local aimbotTargetDropdown = CombatTab:AddDropdown("Aim Target", 
+    {"Head", "Chest", "Torso", "Random"}, 
+    1, 
+    function(option, index)
+        _G.AimbotTarget = option
+        Window:Notify("Aimbot", "Targeting: " .. option, 2, "info")
+    end
+)
+
+-- Slider untuk aimbot smoothness
+local aimbotSmoothSlider = CombatTab:AddSlider("Aim Smoothness", 1, 100, 50, function(value)
+    _G.AimbotSmoothness = value
+    print("Aim smoothness set to:", value)
+end)
+
+-- Slider untuk aimbot FOV
+local aimbotFovSlider = CombatTab:AddSlider("Aimbot FOV", 10, 360, 90, function(value)
+    _G.AimbotFOV = value
+    print("Aimbot FOV set to:", value)
+end)
+
+CombatTab:AddSection("Combat Features")
+
+-- Toggle untuk triggerbot
+local triggerbotToggle = CombatTab:AddToggle("Triggerbot", false, function(state)
+    if state then
+        Window:Notify("Triggerbot", "Triggerbot enabled", 2, "success")
+        _G.TriggerbotEnabled = true
+    else
+        Window:Notify("Triggerbot", "Triggerbot disabled", 2, "warning")
+        _G.TriggerbotEnabled = false
+    end
+end)
+
+-- Toggle untuk wall bang
+local wallBangToggle = CombatTab:AddToggle("Wall Bang", false, function(state)
+    if state then
+        Window:Notify("Wall Bang", "Wall bang enabled", 2, "success")
+    else
+        Window:Notify("Wall Bang", "Wall bang disabled", 2, "warning")
+    end
+end)
+
+-- Toggle untuk no recoil
+local noRecoilToggle = CombatTab:AddToggle("No Recoil", false, function(state)
+    if state then
+        Window:Notify("No Recoil", "No recoil enabled", 2, "success")
+    else
+        Window:Notify("No Recoil", "No recoil disabled", 2, "warning")
+    end
+end)
+
+-- Toggle untuk instant kill
+local instantKillToggle = CombatTab:AddToggle("Instant Kill", false, function(state)
+    if state then
+        Window:Notify("Instant Kill", "Instant kill enabled", 2, "success")
+    else
+        Window:Notify("Instant Kill", "Instant kill disabled", 2, "warning")
+    end
+end)
+
+CombatTab:AddSection("Weapon Settings")
+
+-- Dropdown untuk weapon type
+local weaponDropdown = CombatTab:AddDropdown("Weapon Type", 
+    {"All", "Pistol", "Rifle", "Sniper", "Shotgun", "SMG"}, 
+    1, 
+    function(option, index)
+        Window:Notify("Weapon", "Weapon type: " .. option, 2, "info")
+    end
+)
+
+-- Slider untuk fire rate
+local fireRateSlider = CombatTab:AddSlider("Fire Rate", 1, 100, 50, function(value)
+    print("Fire rate set to:", value)
+end)
+
+-- ================================
+-- VISUAL TAB - Fitur Visual
+-- ================================
+
+VisualTab:AddSection("ESP Settings")
+
+-- Toggle untuk ESP
+local espToggle = VisualTab:AddToggle("ESP", false, function(state)
+    if state then
+        Window:Notify("ESP", "ESP enabled", 2, "success")
+        _G.ESPEnabled = true
+    else
+        Window:Notify("ESP", "ESP disabled", 2, "warning")
+        _G.ESPEnabled = false
+    end
+end)
+
+-- Toggle untuk ESP boxes
+local espBoxesToggle = VisualTab:AddToggle("ESP Boxes", false, function(state)
+    if state then
+        Window:Notify("ESP", "ESP boxes enabled", 2, "success")
+    else
+        Window:Notify("ESP", "ESP boxes disabled", 2, "warning")
+    end
+end)
+
+-- Toggle untuk ESP names
+local espNamesToggle = VisualTab:AddToggle("ESP Names", false, function(state)
+    if state then
+        Window:Notify("ESP", "ESP names enabled", 2, "success")
+    else
+        Window:Notify("ESP", "ESP names disabled", 2, "warning")
+    end
+end)
+
+-- Toggle untuk ESP distance
+local espDistanceToggle = VisualTab:AddToggle("ESP Distance", false, function(state)
+    if state then
+        Window:Notify("ESP", "ESP distance enabled", 2, "success")
+    else
+        Window:Notify("ESP", "ESP distance disabled", 2, "warning")
+    end
+end)
+
+-- Toggle untuk ESP health
+local espHealthToggle = VisualTab:AddToggle("ESP Health", false, function(state)
+    if state then
+        Window:Notify("ESP", "ESP health enabled", 2, "success")
+    else
+        Window:Notify("ESP", "ESP health disabled", 2, "warning")
+    end
+end)
+
+-- Slider untuk ESP distance
+local espDistanceSlider = VisualTab:AddSlider("ESP Distance", 100, 5000, 1000, function(value)
+    _G.ESPDistance = value
+    print("ESP distance set to:", value)
+end)
+
+VisualTab:AddSection("Chams")
+
+-- Toggle untuk chams
+local chamsToggle = VisualTab:AddToggle("Chams", false, function(state)
+    if state then
+        Window:Notify("Chams", "Chams enabled", 2, "success")
+    else
+        Window:Notify("Chams", "Chams disabled", 2, "warning")
+    end
+end)
+
+-- Dropdown untuk chams color
+local chamsColorDropdown = VisualTab:AddDropdown("Chams Color", 
+    {"Red", "Blue", "Green", "Yellow", "Purple", "Orange", "Pink", "White"}, 
+    1, 
+    function(option, index)
+        Window:Notify("Chams", "Chams color: " .. option, 2, "info")
+    end
+)
+
+-- Slider untuk chams transparency
+local chamsTransparencySlider = VisualTab:AddSlider("Chams Transparency", 0, 100, 50, function(value)
+    print("Chams transparency set to:", value)
+end)
+
+VisualTab:AddSection("World Visuals")
+
+-- Toggle untuk full bright
+local fullBrightToggle = VisualTab:AddToggle("Full Bright", false, function(state)
+    if state then
+        Window:Notify("World", "Full bright enabled", 2, "success")
+        game.Lighting.Brightness = 2
+        game.Lighting.ClockTime = 12
+        game.Lighting.FogEnd = 100000
+    else
+        Window:Notify("World", "Full bright disabled", 2, "warning")
+        game.Lighting.Brightness = 1
+        game.Lighting.FogEnd = 1000
+    end
+end)
+
+-- Toggle untuk no fog
+local noFogToggle = VisualTab:AddToggle("No Fog", false, function(state)
+    if state then
+        Window:Notify("World", "No fog enabled", 2, "success")
+        game.Lighting.FogEnd = 100000
+    else
+        Window:Notify("World", "No fog disabled", 2, "warning")
+        game.Lighting.FogEnd = 1000
+    end
+end)
+
+-- Toggle untuk night mode
+local nightModeToggle = VisualTab:AddToggle("Night Mode", false, function(state)
+    if state then
+        Window:Notify("World", "Night mode enabled", 2, "success")
+        game.Lighting.ClockTime = 0
+    else
+        Window:Notify("World", "Night mode disabled", 2, "warning")
+        game.Lighting.ClockTime = 12
+    end
+end)
+
+-- ================================
+-- PLAYER TAB - Fitur Pemain
+-- ================================
+
+PlayerTab:AddSection("Movement")
+
+-- Toggle untuk fly
+local flyToggle = PlayerTab:AddToggle("Fly", false, function(state)
+    if state then
+        Window:Notify("Movement", "Fly enabled", 2, "success")
+        _G.FlyEnabled = true
+        -- Simple fly script
+        local plr = game.Players.LocalPlayer
+        local Humanoid = plr.Character:FindFirstChildOfClass("Humanoid")
+        local mouse = plr:GetMouse()
+        localplayer = plr
+        if workspace:FindFirstChild(localplayer.Name) ~= nil then
+            local character = workspace[localplayer.Name]
+            local mouse = localplayer:GetMouse()
+            local speed = 50
+            local keys = {
+                w = false,
+                s = false,
+                a = false,
+                d = false,
+                q = false,
+                e = false
+            }
+            local move = {
+                x = 0,
+                y = 0,
+                z = 0
+            }
+            
+            mouse.KeyDown:Connect(function(key)
+                if keys[key] ~= nil then
+                    keys[key] = true
+                end
+            end)
+            
+            mouse.KeyUp:Connect(function(key)
+                if keys[key] ~= nil then
+                    keys[key] = false
+                end
+            end)
+            
+            game:GetService("RunService").Heartbeat:Connect(function()
+                if _G.FlyEnabled then
+                    move.x = 0
+                    move.y = 0
+                    move.z = 0
+                    if keys.w then move.z = move.z + 1 end
+                    if keys.s then move.z = move.z - 1 end
+                    if keys.a then move.x = move.x - 1 end
+                    if keys.d then move.x = move.x + 1 end
+                    if keys.q then move.y = move.y + 1 end
+                    if keys.e then move.y = move.y - 1 end
+                    character:TranslateBy(move * speed * 0.1)
+                end
+            end)
+        end
+    else
+        Window:Notify("Movement", "Fly disabled", 2, "warning")
+        _G.FlyEnabled = false
+    end
+end)
+
+-- Toggle untuk no clip
+local noClipToggle = PlayerTab:AddToggle("No Clip", false, function(state)
+    if state then
+        Window:Notify("Movement", "No clip enabled", 2, "success")
+        _G.NoClipEnabled = true
+        game:GetService("RunService").Stepped:Connect(function()
+            if _G.NoClipEnabled then
+                for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
                     end
+                end
+            end
+        end)
+    else
+        Window:Notify("Movement", "No clip disabled", 2, "warning")
+        _G.NoClipEnabled = false
+    end
+end)
+
+-- Toggle untuk infinite jump
+local infiniteJumpToggle = PlayerTab:AddToggle("Infinite Jump", false, function(state)
+    if state then
+        Window:Notify("Movement", "Infinite jump enabled", 2, "success")
+        _G.InfiniteJumpEnabled = true
+        game:GetService("UserInputService").JumpRequest:Connect(function()
+            if _G.InfiniteJumpEnabled then
+                game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+            end
+        end)
+    else
+        Window:Notify("Movement", "Infinite jump disabled", 2, "warning")
+        _G.InfiniteJumpEnabled = false
+    end
+end)
+
+-- Toggle untuk high jump
+local highJumpToggle = PlayerTab:AddToggle("High Jump", false, function(state)
+    if state then
+        Window:Notify("Movement", "High jump enabled", 2, "success")
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.JumpPower = 100
+        end
+    else
+        Window:Notify("Movement", "High jump disabled", 2, "warning")
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
+        end
+    end
+end)
+
+PlayerTab:AddSection("Character")
+
+-- Toggle untuk god mode
+local godModeToggle = PlayerTab:AddToggle("God Mode", false, function(state)
+    if state then
+        Window:Notify("Character", "God mode enabled", 2, "success")
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.MaxHealth = math.huge
+            game.Players.LocalPlayer.Character.Humanoid.Health = math.huge
+        end
+    else
+        Window:Notify("Character", "God mode disabled", 2, "warning")
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.MaxHealth = 100
+            game.Players.LocalPlayer.Character.Humanoid.Health = 100
+        end
+    end
+end)
+
+-- Toggle untuk invisibility
+local invisibilityToggle = PlayerTab:AddToggle("Invisibility", false, function(state)
+    if state then
+        Window:Notify("Character", "Invisibility enabled", 2, "success")
+        if game.Players.LocalPlayer.Character then
+            for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Transparency = 0.5
+                end
+            end
+        end
+    else
+        Window:Notify("Character", "Invisibility disabled", 2, "warning")
+        if game.Players.LocalPlayer.Character then
+            for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                    part.Transparency = 0
                 end
             end
         end
     end
 end)
 
-print("✅ ESP system initialized")
-
-wait(2)
-
--- ═══════════════════════════════════════════════════════════════
--- 🚀 EXAMPLE 8: Fly System with Speed Control
--- ═══════════════════════════════════════════════════════════════
-
-print("\nExample 8: Fly System")
-
-local flyEnabled = false
-local flySpeed = 50
-local flyConnection
-
--- Create Fly Button
-BloxHub:CreateButton("Fly Mode", function()
-    flyEnabled = not flyEnabled
-    local status = flyEnabled and "enabled" or "disabled"
-    BloxHub:Notify("Fly", "Fly mode " .. status, 2, flyEnabled and "success" or "info")
-    
-    local player = game.Players.LocalPlayer
-    if player.Character then
-        local humanoid = player.Character:FindFirstChild("Humanoid")
-        if humanoid then
-            if flyEnabled then
-                -- Enable fly
-                humanoid.PlatformStand = true
-            else
-                -- Disable fly
-                humanoid.PlatformStand = false
-            end
-        end
+-- Slider untuk character size
+local sizeSlider = PlayerTab:AddSlider("Character Size", 0.5, 3, 1, function(value)
+    if game.Players.LocalPlayer.Character then
+        game.Players.LocalPlayer.Character:ScaleTo(value)
     end
 end)
 
--- Create Fly Speed Slider
-local flySpeedSlider = BloxHub:CreateSliderAPI(
-    "Fly Speed",
-    10,    -- Min
-    500,   -- Max
-    50,    -- Default
-    function(value)
-        flySpeed = value
-        print("Fly Speed:", value)
+-- ================================
+-- SETTINGS TAB - Pengaturan
+-- ================================
+
+SettingsTab:AddSection("UI Settings")
+
+-- Dropdown untuk theme
+local themeDropdown = SettingsTab:AddDropdown("UI Theme", 
+    {"Default", "Dark", "Light", "Custom"}, 
+    1, 
+    function(option, index)
+        if option == "Dark" then
+            BloxHub:SetTheme("Dark")
+        elseif option == "Light" then
+            BloxHub:SetTheme("Light")
+        else
+            BloxHub:SetTheme("Default")
+        end
+        Window:Notify("UI", "Theme changed to: " .. option, 2, "success")
     end
 )
 
--- Fly Movement Logic
-local UserInputService = game:GetService("UserInputService")
-flyConnection = RunService.Heartbeat:Connect(function()
-    if flyEnabled then
-        local player = game.Players.LocalPlayer
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local rootPart = player.Character.HumanoidRootPart
-            local camera = workspace.CurrentCamera
-            local moveDirection = Vector3.new(0, 0, 0)
-            
-            -- WASD Movement
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                moveDirection = moveDirection + camera.CFrame.LookVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                moveDirection = moveDirection - camera.CFrame.LookVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                moveDirection = moveDirection - camera.CFrame.RightVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                moveDirection = moveDirection + camera.CFrame.RightVector
-            end
-            
-            -- Space/Shift for up/down
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                moveDirection = moveDirection + Vector3.new(0, 1, 0)
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-                moveDirection = moveDirection - Vector3.new(0, 1, 0)
-            end
-            
-            -- Apply movement
-            if moveDirection.Magnitude > 0 then
-                rootPart.Velocity = moveDirection.Unit * flySpeed
-            else
-                rootPart.Velocity = Vector3.new(0, 0, 0)
-            end
-        end
+-- Toggle untuk notifications
+local notificationsToggle = SettingsTab:AddToggle("Show Notifications", true, function(state)
+    print("Notifications:", state and "Enabled" or "Disabled")
+end)
+
+-- Slider untuk notification duration
+local notificationDurationSlider = SettingsTab:AddSlider("Notification Duration", 1, 10, 3, function(value)
+    print("Notification duration:", value, "seconds")
+end)
+
+SettingsTab:AddSection("Keybinds")
+
+-- Keybind untuk toggle UI
+local toggleUIKey = SettingsTab:AddKeybind("Toggle UI", Enum.KeyCode.RightControl, function(key)
+    print("Toggle UI key changed to:", tostring(key))
+end)
+
+-- Keybind untuk panic mode
+local panicKey = SettingsTab:AddKeybind("Panic Mode", Enum.KeyCode.P, function(key)
+    print("Panic key changed to:", tostring(key))
+end)
+
+-- Setup panic mode
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == panicKey:GetValue() then
+        -- Disable all features
+        aimbotToggle:SetValue(false)
+        espToggle:SetValue(false)
+        flyToggle:SetValue(false)
+        noClipToggle:SetValue(false)
+        godModeToggle:SetValue(false)
+        Window:Notify("Panic", "All features disabled!", 2, "warning")
     end
 end)
 
-print("✅ Fly system initialized")
+SettingsTab:AddSection("Performance")
 
-wait(2)
-
--- ═══════════════════════════════════════════════════════════════
--- 🎯 EXAMPLE 9: Aimbot with FOV Circle
--- ═══════════════════════════════════════════════════════════════
-
-print("\nExample 9: Aimbot System")
-
-local aimbotFOV = 90
-local aimbotSmooth = 0.5
-local aimbotConnection
-
--- Aimbot FOV Slider
-BloxHub:CreateSliderAPI("Aimbot FOV", 30, 180, 90, function(value)
-    aimbotFOV = value
-end)
-
--- Aimbot Smoothness Slider
-BloxHub:CreateSliderAPI("Aim Smooth", 0, 100, 50, function(value)
-    aimbotSmooth = value / 100
-end)
-
--- Aimbot Logic (simplified)
-aimbotConnection = RunService.RenderStepped:Connect(function()
-    if BloxHub.Features.Aimbot and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-        local player = game.Players.LocalPlayer
-        local camera = workspace.CurrentCamera
-        local closestPlayer = nil
-        local shortestDistance = math.huge
-        
-        for _, targetPlayer in pairs(Players:GetPlayers()) do
-            if targetPlayer ~= player and targetPlayer.Character then
-                local targetChar = targetPlayer.Character
-                local targetHead = targetChar:FindFirstChild("Head")
-                
-                if targetHead then
-                    local screenPos, onScreen = camera:WorldToViewportPoint(targetHead.Position)
-                    if onScreen then
-                        local mousePos = UserInputService:GetMouseLocation()
-                        local distance = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-                        
-                        if distance < shortestDistance and distance < aimbotFOV then
-                            closestPlayer = targetHead
-                            shortestDistance = distance
-                        end
-                    end
-                end
-            end
-        end
-        
-        if closestPlayer then
-            -- Smooth aim towards target
-            camera.CFrame = camera.CFrame:Lerp(
-                CFrame.new(camera.CFrame.Position, closestPlayer.Position),
-                aimbotSmooth
-            )
-        end
-    end
-end)
-
-print("✅ Aimbot system initialized")
-
-wait(2)
-
--- ═══════════════════════════════════════════════════════════════
--- 🛡️ EXAMPLE 10: God Mode Toggle
--- ═══════════════════════════════════════════════════════════════
-
-print("\nExample 10: God Mode")
-
-local godModeEnabled = false
-local originalHealth = 100
-
-BloxHub:CreateButton("God Mode", function()
-    local player = game.Players.LocalPlayer
-    if player.Character then
-        local humanoid = player.Character:FindFirstChild("Humanoid")
-        if humanoid then
-            godModeEnabled = not godModeEnabled
-            
-            if godModeEnabled then
-                originalHealth = humanoid.MaxHealth
-                humanoid.MaxHealth = math.huge
-                humanoid.Health = math.huge
-                BloxHub:Notify("God Mode", "God Mode enabled!", 2, "success")
-            else
-                humanoid.MaxHealth = originalHealth
-                humanoid.Health = originalHealth
-                BloxHub:Notify("God Mode", "God Mode disabled", 2, "info")
-            end
-        end
-    end
-end)
-
-wait(2)
-
--- ═══════════════════════════════════════════════════════════════
--- 🔧 EXAMPLE 11: Accessing Feature States
--- ═══════════════════════════════════════════════════════════════
-
-print("\nExample 11: Feature State Monitoring")
-
--- Monitor all feature states
-spawn(function()
-    while wait(5) do
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        print("📊 Current Feature States:")
-        for feature, state in pairs(BloxHub.Features) do
-            print(string.format("  %s: %s", feature, tostring(state)))
-        end
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    end
-end)
-
-wait(2)
-
--- ═══════════════════════════════════════════════════════════════
--- 💾 EXAMPLE 12: Manual Save/Load
--- ═══════════════════════════════════════════════════════════════
-
-print("\nExample 12: Settings Management")
-
--- Create a button to manually save settings
-BloxHub:CreateButton("Save Settings", function()
-    BloxHub:SaveSettings()
-    BloxHub:Notify("Settings", "Settings saved successfully!", 2, "success")
-end)
-
--- Create a button to reload settings
-BloxHub:CreateButton("Load Settings", function()
-    local loaded = BloxHub:LoadSettings()
-    if loaded then
-        BloxHub:Notify("Settings", "Settings loaded successfully!", 2, "success")
+-- Toggle untuk performance mode
+local performanceModeToggle = SettingsTab:AddToggle("Performance Mode", false, function(state)
+    if state then
+        Window:Notify("Performance", "Performance mode enabled", 2, "warning")
     else
-        BloxHub:Notify("Settings", "No saved settings found", 2, "info")
+        Window:Notify("Performance", "Performance mode disabled", 2, "success")
     end
 end)
 
-wait(2)
-
--- ═══════════════════════════════════════════════════════════════
--- 🎮 EXAMPLE 13: Game-Specific Integration
--- ═══════════════════════════════════════════════════════════════
-
-print("\nExample 13: Game-Specific Features")
-
--- Detect game and add specific features
-local gameId = game.PlaceId
-
-if gameId == 142823291 then
-    -- Murder Mystery 2
-    BloxHub:CreateButton("Collect Coins", function()
-        BloxHub:Notify("MM2", "Collecting coins...", 2, "info")
-        -- Add coin collection logic here
-    end)
-    
-elseif gameId == 606849621 then
-    -- Jailbreak
-    BloxHub:CreateButton("Auto Rob", function()
-        BloxHub:Notify("Jailbreak", "Auto rob started!", 2, "success")
-        -- Add auto rob logic here
-    end)
-    
-else
-    -- Universal features
-    BloxHub:CreateButton("Game Info", function()
-        BloxHub:Notify("Game", "Game ID: " .. tostring(gameId), 3, "info")
-    end)
-end
-
-wait(2)
-
--- ═══════════════════════════════════════════════════════════════
--- 🎨 EXAMPLE 14: Visual Effects
--- ═══════════════════════════════════════════════════════════════
-
-print("\nExample 14: Visual Effects")
-
-local fullbrightEnabled = false
-
-BloxHub:CreateButton("Fullbright", function()
-    fullbrightEnabled = not fullbrightEnabled
-    local lighting = game:GetService("Lighting")
-    
-    if fullbrightEnabled then
-        lighting.Brightness = 2
-        lighting.ClockTime = 14
-        lighting.FogEnd = 100000
-        lighting.GlobalShadows = false
-        lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
-        BloxHub:Notify("Fullbright", "Fullbright enabled!", 2, "success")
-    else
-        lighting.Brightness = 1
-        lighting.ClockTime = 12
-        lighting.FogEnd = 100000
-        lighting.GlobalShadows = true
-        lighting.OutdoorAmbient = Color3.fromRGB(70, 70, 70)
-        BloxHub:Notify("Fullbright", "Fullbright disabled", 2, "info")
-    end
+-- Slider untuk render distance
+local renderDistanceSlider = SettingsTab:AddSlider("Render Distance", 50, 500, 200, function(value)
+    print("Render distance set to:", value)
 end)
 
-wait(2)
+-- ================================
+-- SCRIPTS TAB - Script Executor
+-- ================================
 
--- ═══════════════════════════════════════════════════════════════
--- 🔄 EXAMPLE 15: Auto-Farm Template
--- ═══════════════════════════════════════════════════════════════
+ScriptsTab:AddSection("Script Executor")
 
-print("\nExample 15: Auto-Farm System")
-
-local autoFarmEnabled = false
-local farmConnection
-
-BloxHub:CreateButton("Auto Farm", function()
-    autoFarmEnabled = not autoFarmEnabled
-    BloxHub:Notify("Auto Farm", "Auto Farm " .. (autoFarmEnabled and "started" or "stopped"), 2,
-        autoFarmEnabled and "success" or "info")
+-- TextBox untuk script input
+local scriptTextBox = ScriptsTab:AddTextBox("Script", "-- Enter your script here", function(text)
+    _G.ScriptToExecute = text
+    print("Script loaded")
 end)
 
--- Farm delay slider
-local farmDelay = 1
-BloxHub:CreateSliderAPI("Farm Delay", 0.1, 5, 1, function(value)
-    farmDelay = value
-end)
-
--- Farm logic
-spawn(function()
-    while wait(farmDelay) do
-        if autoFarmEnabled then
-            -- Your farming logic here
-            -- Example: Collect nearest item, kill nearest enemy, etc.
-            print("Farming... (every " .. farmDelay .. " seconds)")
+-- Button untuk execute script
+ScriptsTab:AddButton("Execute Script", function()
+    if _G.ScriptToExecute and _G.ScriptToExecute ~= "" then
+        local success, result = pcall(function()
+            return loadstring(_G.ScriptToExecute)()
+        end)
+        if success then
+            Window:Notify("Executor", "Script executed successfully!", 2, "success")
+        else
+            Window:Notify("Executor", "Script error: " .. tostring(result), 3, "error")
         end
+    else
+        Window:Notify("Executor", "No script to execute", 2, "warning")
+    end
+end, {
+    Icon = "▶️",
+    Color = Color3.fromRGB(0, 255, 0)
+})
+
+-- Button untuk clear script
+ScriptsTab:AddButton("Clear Script", function()
+    scriptTextBox:SetValue("")
+    _G.ScriptToExecute = nil
+    Window:Notify("Executor", "Script cleared", 2, "info")
+end, {
+    Icon = "🗑️",
+    Color = Color3.fromRGB(255, 0, 0)
+})
+
+ScriptsTab:AddSection("Popular Scripts")
+
+-- Button untuk infinite yield
+ScriptsTab:AddButton("Infinite Yield", function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+    Window:Notify("Executor", "Infinite Yield loaded", 2, "success")
+end, {
+    Icon = "♾️",
+    Color = Color3.fromRGB(255, 255, 0)
+})
+
+-- Button untuk remote spy
+ScriptsTab:AddButton("Remote Spy", function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/78n/Ammonia/main/RemoteSpy.lua'))()
+    Window:Notify("Executor", "Remote Spy loaded", 2, "success")
+end, {
+    Icon = "👁️",
+    Color = Color3.fromRGB(0, 255, 255)
+})
+
+-- ================================
+-- TELEPORT TAB - Teleportasi
+-- ================================
+
+TeleportTab:AddSection("Location Teleport")
+
+-- Dropdown untuk lokasi
+local locationDropdown = TeleportTab:AddDropdown("Select Location", 
+    {"Spawn", "Shop", "Bank", "Arena", "VIP Area", "Safe Zone", "Boss Area", "Secret Area"}, 
+    1, 
+    function(option, index)
+        print("Selected location:", option)
+    end
+)
+
+-- Button untuk teleport
+TeleportTab:AddButton("Teleport", function()
+    local selectedLocation = locationDropdown:GetValue()
+    local teleportPositions = {
+        ["Spawn"] = CFrame.new(0, 10, 0),
+        ["Shop"] = CFrame.new(100, 10, 100),
+        ["Bank"] = CFrame.new(-100, 10, 100),
+        ["Arena"] = CFrame.new(0, 10, 200),
+        ["VIP Area"] = CFrame.new(200, 20, 200),
+        ["Safe Zone"] = CFrame.new(-200, 10, -200),
+        ["Boss Area"] = CFrame.new(300, 30, 300),
+        ["Secret Area"] = CFrame.new(-300, 50, -300)
+    }
+    
+    if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = teleportPositions[selectedLocation] or CFrame.new(0, 10, 0)
+        Window:Notify("Teleport", "Teleported to " .. selectedLocation, 2, "success")
+    end
+end, {
+    Icon = "📍",
+    Color = Color3.fromRGB(0, 255, 255)
+})
+
+TeleportTab:AddSection("Player Teleport")
+
+-- TextBox untuk player name
+local playerTextBox = TeleportTab:AddTextBox("Player Name", "Enter player name...", function(text)
+    _G.TargetPlayer = text
+end)
+
+-- Button untuk teleport to player
+TeleportTab:AddButton("Teleport to Player", function()
+    if _G.TargetPlayer then
+        local targetPlayer = game.Players:FindFirstChild(_G.TargetPlayer)
+        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame
+            Window:Notify("Teleport", "Teleported to " .. _G.TargetPlayer, 2, "success")
+        else
+            Window:Notify("Teleport", "Player not found", 2, "error")
+        end
+    else
+        Window:Notify("Teleport", "No player specified", 2, "warning")
+    end
+end, {
+    Icon = "👤",
+    Color = Color3.fromRGB(255, 0, 255)
+})
+
+-- Button untuk bring player
+TeleportTab:AddButton("Bring Player", function()
+    if _G.TargetPlayer then
+        local targetPlayer = game.Players:FindFirstChild(_G.TargetPlayer)
+        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            targetPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+            Window:Notify("Teleport", "Brought " .. _G.TargetPlayer, 2, "success")
+        else
+            Window:Notify("Teleport", "Player not found", 2, "error")
+        end
+    else
+        Window:Notify("Teleport", "No player specified", 2, "warning")
+    end
+end, {
+    Icon = "🔄",
+    Color = Color3.fromRGB(0, 255, 0)
+})
+
+-- ================================
+-- INFO TAB - Informasi
+-- ================================
+
+InfoTab:AddSection("About")
+
+-- Label untuk informasi
+InfoTab:AddLabel("BloxHub GUI Framework")
+InfoTab:AddLabel("Version: 1.0.0")
+InfoTab:AddLabel("Author: ArtChivegroup")
+InfoTab:AddLabel("Status: Active")
+
+InfoTab:AddSection("Game Info")
+
+-- Label untuk game info
+InfoTab:AddLabel("Game: " .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name)
+InfoTab:AddLabel("Place ID: " .. game.PlaceId)
+InfoTab:AddLabel("Players: " .. #game.Players:GetPlayers() .. "/20")
+InfoTab:AddLabel("Server Time: " .. os.date("%H:%M:%S"))
+
+InfoTab:AddSection("Statistics")
+
+-- Label untuk statistics
+InfoTab:AddLabel("Features Loaded: 50+")
+InfoTab:AddLabel("Scripts Executed: 0")
+InfoTab:AddLabel("Teleports: 0")
+InfoTab:AddLabel("Runtime: " .. math.floor(tick()) .. "s")
+
+InfoTab:AddSection("Help")
+
+-- Button untuk tutorial
+InfoTab:AddButton("Show Tutorial", function()
+    Window:Notify("Tutorial", "Welcome to BloxHub!\n\n1. Use tabs to navigate\n2. Toggle features on/off\n3. Adjust values with sliders\n4. Execute scripts safely\n5. Press P for panic mode", 5, "info")
+end, {
+    Icon = "📖",
+    Color = Color3.fromRGB(0, 123, 255)
+})
+
+-- Button untuk discord
+InfoTab:AddButton("Join Discord", function()
+    Window:Notify("Discord", "Join our Discord for updates!", 3, "info")
+end, {
+    Icon = "💬",
+    Color = Color3.fromRGB(114, 137, 218)
+})
+
+-- Button untuk update
+InfoTab:AddButton("Check Updates", function()
+    Window:Notify("Update", "You are using the latest version!", 2, "success")
+end, {
+    Icon = "🔄",
+    Color = Color3.fromRGB(0, 255, 0)
+})
+
+-- ================================
+-- INITIALIZATION
+-- ================================
+
+-- Show welcome notification
+Window:Notify("Welcome", "BloxHub GUI Framework loaded successfully!", 5, "success")
+
+-- Update server time every second
+spawn(function()
+    while true do
+        wait(1)
+        -- Update time label would require storing reference
     end
 end)
 
--- ═══════════════════════════════════════════════════════════════
--- 📊 FINAL MESSAGE
--- ═══════════════════════════════════════════════════════════════
+-- Setup input handlers
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    -- Handle custom keybinds here
+end)
 
-wait(3)
-
--- Keep script running
-BloxHub:Notify("Examples", "All 15 examples loaded! Check console.", 5, "success")
+print("BloxHub GUI Framework - Complete Showcase loaded!")
