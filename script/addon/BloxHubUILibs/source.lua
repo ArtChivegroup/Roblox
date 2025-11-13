@@ -829,16 +829,15 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, dropdownBtn)
     
-    -- 选项容器（初始隐藏）
+    -- 选项容器（初始隐藏）- 修改：直接附加到ScreenGui而不是container
     local optionsContainer = Instance.new("Frame")
     optionsContainer.Name = "DropdownOptions"
     optionsContainer.Size = UDim2.new(0.5, -12, 0, 0)
-    optionsContainer.Position = UDim2.new(0.5, 0, 1, 5)
     optionsContainer.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
     optionsContainer.BorderSizePixel = 0
     optionsContainer.Visible = false
-    optionsContainer.ZIndex = 100
-    optionsContainer.Parent = container
+    optionsContainer.ZIndex = 1000  -- 大幅提高ZIndex
+    optionsContainer.Parent = BloxHub.Core.ScreenGui  -- 直接附加到ScreenGui
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsContainer)
     
@@ -870,7 +869,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             optionBg.Text = ""
             optionBg.AutoButtonColor = false
             optionBg.LayoutOrder = i
-            optionBg.ZIndex = 101
+            optionBg.ZIndex = 1001  -- 确保比容器高一级
             optionBg.Parent = optionsContainer
             
             CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionBg)
@@ -885,7 +884,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             optionText.TextSize = 12
             optionText.Font = BloxHub.Settings.Font
             optionText.TextXAlignment = Enum.TextXAlignment.Left
-            optionText.ZIndex = 102
+            optionText.ZIndex = 1002  -- 确保比背景高一级
             optionText.Parent = optionBg
             
             -- 选中状态指示器
@@ -896,7 +895,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             selectedIndicator.BackgroundColor3 = BloxHub.Settings.Theme.Accent
             selectedIndicator.BorderSizePixel = 0
             selectedIndicator.Visible = (option == selectedOption)
-            selectedIndicator.ZIndex = 103
+            selectedIndicator.ZIndex = 1003  -- 确保比文本高一级
             selectedIndicator.Parent = optionBg
             
             -- 事件处理
@@ -938,6 +937,18 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     -- 初始化选项
     createOptions()
     
+    -- 更新选项位置的函数
+    local function updateOptionsPosition()
+        if expanded then
+            -- 计算下拉按钮在屏幕上的绝对位置
+            local absolutePos = dropdownBtn.AbsolutePosition
+            local absoluteSize = dropdownBtn.AbsoluteSize
+            
+            -- 设置选项容器的位置为下拉按钮下方
+            optionsContainer.Position = UDim2.new(0, absolutePos.X, 0, absolutePos.Y + absoluteSize.Y)
+        end
+    end
+    
     -- 下拉按钮点击事件
     dropdownBtn.MouseButton1Click:Connect(function()
         expanded = not expanded
@@ -945,6 +956,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         
         if expanded then
             dropdownBtn.Text = selectedOption .. " ▲"
+            updateOptionsPosition()
         else
             dropdownBtn.Text = selectedOption .. " ▼"
         end
@@ -957,6 +969,15 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     dropdownBtn.MouseLeave:Connect(function()
         Tween(dropdownBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Secondary}, 0.2)
     end)
+    
+    -- 监听容器位置/大小变化，以便更新选项位置
+    tab.Container:GetPropertyChangedSignal("AbsolutePosition"):Connect(updateOptionsPosition)
+    tab.Container:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateOptionsPosition)
+    
+    -- 监听窗口移动，以便更新选项位置
+    if tab.Window and tab.Window.Frame then
+        tab.Window.Frame:GetPropertyChangedSignal("AbsolutePosition"):Connect(updateOptionsPosition)
+    end
     
     -- 返回控制对象
     return {
@@ -978,6 +999,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         end,
         Refresh = function()
             createOptions()
+            updateOptionsPosition()
         end
     }
 end
