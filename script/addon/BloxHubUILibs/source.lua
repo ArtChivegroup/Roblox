@@ -795,7 +795,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     
     local container = Instance.new("Frame")
     container.Name = "Dropdown_" .. text
-    container.Size = UDim2.new(1, 0, 0, 35)
+    container.Size = UDim2.new(1, 0, 0, 35)  -- 保持固定高度
     container.BackgroundColor3 = BloxHub.Settings.Theme.Primary
     container.BorderSizePixel = 0
     container.Parent = tab.Container
@@ -826,13 +826,15 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, dropdownBtn)
     
+    -- 选项框作为容器的子元素，但使用更高的ZIndex确保它显示在其他元素之上
     local optionsFrame = Instance.new("Frame")
-    optionsFrame.Size = UDim2.new(0.5, -12, 0, #options * 30)
-    optionsFrame.Position = UDim2.new(0.5, 0, 1, 5)
+    optionsFrame.Name = "DropdownOptions_" .. text
+    optionsFrame.Size = UDim2.new(0.5, -12, 0, math.min(#options * 25, 150))  -- 限制最大高度
+    optionsFrame.Position = UDim2.new(0.5, 0, 1, 5)  -- 相对于容器的位置
     optionsFrame.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
     optionsFrame.BorderSizePixel = 0
     optionsFrame.Visible = false
-    optionsFrame.ZIndex = 10
+    optionsFrame.ZIndex = 100  -- 更高的ZIndex确保它显示在其他元素之上
     optionsFrame.Parent = container
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsFrame)
@@ -843,7 +845,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     
     for _, option in ipairs(options) do
         local optionBtn = Instance.new("TextButton")
-        optionBtn.Size = UDim2.new(1, -4, 0, 28)
+        optionBtn.Size = UDim2.new(1, -4, 0, 25)  -- 减小高度
         optionBtn.Position = UDim2.new(0, 2, 0, 0)
         optionBtn.BackgroundColor3 = BloxHub.Settings.Theme.Primary
         optionBtn.Text = option
@@ -851,6 +853,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         optionBtn.TextSize = 12
         optionBtn.Font = BloxHub.Settings.Font
         optionBtn.AutoButtonColor = false
+        optionBtn.ZIndex = 101  -- 确保按钮在选项框之上
         optionBtn.Parent = optionsFrame
         
         CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionBtn)
@@ -879,11 +882,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         expanded = not expanded
         optionsFrame.Visible = expanded
         
-        if expanded then
-            Tween(container, {Size = UDim2.new(1, 0, 0, 35 + optionsFrame.Size.Y.Offset + 5)}, 0.2)
-        else
-            Tween(container, {Size = UDim2.new(1, 0, 0, 35)}, 0.2)
-        end
+        -- 不再需要改变容器大小
     end)
     
     return {
