@@ -1,48 +1,66 @@
 --[[
     ╔═══════════════════════════════════════════════════════════╗
-    ║           🧩 BloxHub GUI Framework v2.0                   ║
+    ║           BloxHub GUI Framework v2.0                      ║
     ║           Universal Roblox GUI System                     ║
     ║           Author: BloxHub                                 ║
-    ║           Date: 2025-11-12                                ║
+    ║           Single-File Modular Component System            ║
     ╚═══════════════════════════════════════════════════════════╝
 ]]
 
 local BloxHub = {
-    Core = {},
-    UI = {},
+    Version = "2.0.0",
+    
+    Core = {
+        Initialized = false,
+        ScreenGui = nil,
+        MainContainer = nil
+    },
+    
     Elements = {},
+    
     Settings = {
         Theme = {
-            Primary = Color3.fromRGB(45, 45, 55),
+            Background = Color3.fromRGB(15, 15, 15),
+            Primary = Color3.fromRGB(25, 25, 30),
             Secondary = Color3.fromRGB(35, 35, 45),
-            Accent = Color3.fromRGB(88, 101, 242),
-            AccentHover = Color3.fromRGB(108, 121, 255),
-            Success = Color3.fromRGB(67, 181, 129),
-            Warning = Color3.fromRGB(250, 166, 26),
-            Danger = Color3.fromRGB(237, 66, 69),
+            Accent = Color3.fromRGB(0, 120, 255),
+            AccentHover = Color3.fromRGB(0, 162, 255),
             Text = Color3.fromRGB(255, 255, 255),
             TextDim = Color3.fromRGB(180, 180, 190),
-            Border = Color3.fromRGB(60, 60, 75)
+            Success = Color3.fromRGB(100, 255, 100),
+            Warning = Color3.fromRGB(255, 255, 100),
+            Error = Color3.fromRGB(255, 100, 100)
         },
-        Font = {
-            Regular = Enum.Font.Gotham,
-            Bold = Enum.Font.GothamBold,
-            Semibold = Enum.Font.GothamSemibold
+        Font = Enum.Font.Gotham,
+        FontBold = Enum.Font.GothamBold,
+        FontSemibold = Enum.Font.GothamSemibold,
+        CornerRadius = {
+            Large = 12,
+            Medium = 8,
+            Small = 6
         },
-        DefaultHotkey = Enum.KeyCode.LeftAlt,
-        IconEnabled = true,
-        Resizable = false
+        Animation = {
+            Speed = 0.25,
+            Style = Enum.EasingStyle.Quad,
+            Direction = Enum.EasingDirection.Out
+        }
     },
+    
     State = {
         Windows = {},
-        ActiveWindow = nil,
-        GUIVisible = true,
-        ListeningHotkey = nil,
-        IconPosition = UDim2.new(0.5, -55, 0.1, 0)
+        ActiveHotkeyListener = nil,
+        DraggingElement = nil,
+        SavedConfigs = {}
+    },
+    
+    Input = {
+        Connections = {}
     }
 }
 
--- Services
+-- ═══════════════════════════════════════════════════════════
+-- SERVICES
+-- ═══════════════════════════════════════════════════════════
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -50,28 +68,32 @@ local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
 
 -- ═══════════════════════════════════════════════════════════
 -- CORE UTILITIES
 -- ═══════════════════════════════════════════════════════════
 
-function BloxHub.Core.Tween(instance, properties, duration, style, direction)
-    local tweenInfo = TweenInfo.new(
-        duration or 0.25,
-        style or Enum.EasingStyle.Quad,
-        direction or Enum.EasingDirection.Out
-    )
+local function Tween(instance, properties, duration, style, direction)
+    duration = duration or BloxHub.Settings.Animation.Speed
+    style = style or BloxHub.Settings.Animation.Style
+    direction = direction or BloxHub.Settings.Animation.Direction
+    
+    local tweenInfo = TweenInfo.new(duration, style, direction)
     local tween = TweenService:Create(instance, tweenInfo, properties)
     tween:Play()
     return tween
 end
 
-function BloxHub.Core.MakeDraggable(frame, dragHandle)
-    local dragging, dragInput, mousePos, framePos = false, nil, nil, nil
+local function MakeDraggable(frame, dragHandle)
+    local dragging = false
+    local dragInput, mousePos, framePos
+    
     dragHandle = dragHandle or frame
     
     dragHandle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+           input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             mousePos = input.Position
             framePos = frame.Position
@@ -85,7 +107,8 @@ function BloxHub.Core.MakeDraggable(frame, dragHandle)
     end)
     
     dragHandle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseMovement or 
+           input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
@@ -93,1652 +116,1437 @@ function BloxHub.Core.MakeDraggable(frame, dragHandle)
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - mousePos
-            BloxHub.Core.Tween(frame, {
+            Tween(frame, {
                 Position = UDim2.new(
-                    framePos.X.Scale, framePos.X.Offset + delta.X,
-                    framePos.Y.Scale, framePos.Y.Offset + delta.Y
+                    framePos.X.Scale,
+                    framePos.X.Offset + delta.X,
+                    framePos.Y.Scale,
+                    framePos.Y.Offset + delta.Y
                 )
             }, 0.1)
         end
     end)
 end
 
-function BloxHub.Core.CreateRipple(parent, clickPosition)
-    local Ripple = Instance.new("Frame")
-    Ripple.Size = UDim2.new(0, 0, 0, 0)
-    Ripple.Position = clickPosition or UDim2.new(0.5, 0, 0.5, 0)
-    Ripple.AnchorPoint = Vector2.new(0.5, 0.5)
-    Ripple.BackgroundColor3 = BloxHub.Settings.Theme.Accent
-    Ripple.BackgroundTransparency = 0.5
-    Ripple.BorderSizePixel = 0
-    Ripple.ZIndex = 10
-    Ripple.Parent = parent
-    
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(1, 0)
-    Corner.Parent = Ripple
-    
-    BloxHub.Core.Tween(Ripple, {
-        Size = UDim2.new(2.5, 0, 2.5, 0),
-        BackgroundTransparency = 1
-    }, 0.6)
-    
-    task.delay(0.6, function()
-        Ripple:Destroy()
-    end)
+local function CreateUICorner(radius, parent)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius or BloxHub.Settings.CornerRadius.Medium)
+    corner.Parent = parent
+    return corner
 end
 
-function BloxHub.Core.Notify(title, message, duration, notifType)
-    duration = duration or 3
-    notifType = notifType or "info"
-    
-    local ScreenGui = BloxHub.UI.ScreenGui
-    if not ScreenGui then return end
-    
-    local NotifContainer = ScreenGui:FindFirstChild("NotificationContainer")
-    if not NotifContainer then
-        NotifContainer = Instance.new("Frame")
-        NotifContainer.Name = "NotificationContainer"
-        NotifContainer.Size = UDim2.new(0, 320, 1, -20)
-        NotifContainer.Position = UDim2.new(1, -330, 0, 10)
-        NotifContainer.BackgroundTransparency = 1
-        NotifContainer.ZIndex = 100
-        NotifContainer.Parent = ScreenGui
-        
-        local ListLayout = Instance.new("UIListLayout")
-        ListLayout.Padding = UDim.new(0, 10)
-        ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        ListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-        ListLayout.Parent = NotifContainer
+local function CreateUIPadding(left, right, top, bottom, parent)
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, left or 0)
+    padding.PaddingRight = UDim.new(0, right or 0)
+    padding.PaddingTop = UDim.new(0, top or 0)
+    padding.PaddingBottom = UDim.new(0, bottom or 0)
+    padding.Parent = parent
+    return padding
+end
+
+local function GetKeyName(keyCode, inputType)
+    if inputType == Enum.UserInputType.MouseButton1 then
+        return "Mouse1"
+    elseif inputType == Enum.UserInputType.MouseButton2 then
+        return "Mouse2"
+    elseif inputType == Enum.UserInputType.MouseButton3 then
+        return "Mouse3"
+    else
+        return keyCode.Name:gsub("Enum.KeyCode.", "")
+    end
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- CORE INITIALIZATION
+-- ═══════════════════════════════════════════════════════════
+
+function BloxHub:Init()
+    if self.Core.Initialized then
+        return self
     end
     
-    local Notif = Instance.new("Frame")
-    Notif.Size = UDim2.new(1, 0, 0, 0)
-    Notif.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-    Notif.BorderSizePixel = 0
-    Notif.ClipsDescendants = true
-    Notif.Parent = NotifContainer
+    -- Create ScreenGui
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "BloxHubFramework_" .. HttpService:GenerateGUID(false)
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.DisplayOrder = 999
     
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 10)
-    UICorner.Parent = Notif
+    -- Parent to appropriate location
+    if gethui then
+        screenGui.Parent = gethui()
+    elseif syn and syn.protect_gui then
+        syn.protect_gui(screenGui)
+        screenGui.Parent = game:GetService("CoreGui")
+    else
+        screenGui.Parent = game:GetService("CoreGui")
+    end
     
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Color = BloxHub.Settings.Theme.Border
-    UIStroke.Thickness = 1
-    UIStroke.Transparency = 0.7
-    UIStroke.Parent = Notif
+    self.Core.ScreenGui = screenGui
+    self.Core.Initialized = true
     
-    local ColorBar = Instance.new("Frame")
-    ColorBar.Size = UDim2.new(0, 4, 1, 0)
-    ColorBar.BorderSizePixel = 0
-    ColorBar.Parent = Notif
+    -- Setup input handling
+    self:SetupInputHandling()
     
-    local colors = {
-        info = BloxHub.Settings.Theme.Accent,
-        success = BloxHub.Settings.Theme.Success,
-        warning = BloxHub.Settings.Theme.Warning,
-        error = BloxHub.Settings.Theme.Danger
+    -- Load saved config
+    self:LoadConfig()
+    
+    return self
+end
+
+function BloxHub:SetupInputHandling()
+    local connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        -- Handle hotkey listening mode
+        if self.State.ActiveHotkeyListener then
+            local keyName = GetKeyName(input.KeyCode, input.UserInputType)
+            local callback = self.State.ActiveHotkeyListener.Callback
+            local button = self.State.ActiveHotkeyListener.Button
+            
+            if button then
+                button.Text = keyName
+            end
+            
+            if callback then
+                callback(input.KeyCode, input.UserInputType, keyName)
+            end
+            
+            self.State.ActiveHotkeyListener = nil
+            return
+        end
+        
+        -- Handle registered hotkeys
+        for _, window in pairs(self.State.Windows) do
+            if window.Hotkeys then
+                for _, hotkey in pairs(window.Hotkeys) do
+                    if hotkey.Enabled and 
+                       ((hotkey.KeyCode and input.KeyCode == hotkey.KeyCode) or
+                        (hotkey.InputType and input.UserInputType == hotkey.InputType)) then
+                        if hotkey.Callback then
+                            hotkey.Callback()
+                        end
+                    end
+                end
+            end
+        end
+    end)
+    
+    table.insert(self.Input.Connections, connection)
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- WINDOW API
+-- ═══════════════════════════════════════════════════════════
+
+function BloxHub:CreateWindow(title, config)
+    config = config or {}
+    
+    local window = {
+        Title = title or "BloxHub Window",
+        Size = config.Size or UDim2.new(0, 520, 0, 420),
+        Position = config.Position or UDim2.new(0.5, -260, 0.5, -210),
+        Resizable = config.Resizable or false,
+        Visible = config.Visible ~= false,
+        Tabs = {},
+        CurrentTab = nil,
+        Elements = {},
+        Hotkeys = {},
+        ID = HttpService:GenerateGUID(false)
     }
-    ColorBar.BackgroundColor3 = colors[notifType] or colors.info
     
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 10)
-    Corner.Parent = ColorBar
+    -- Main container
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "Window_" .. window.ID
+    mainFrame.Size = window.Size
+    mainFrame.Position = window.Position
+    mainFrame.BackgroundColor3 = self.Settings.Theme.Background
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Active = true
+    mainFrame.Visible = window.Visible
+    mainFrame.Parent = self.Core.ScreenGui
     
-    local Title = Instance.new("TextLabel")
-    Title.Size = UDim2.new(1, -55, 0, 22)
-    Title.Position = UDim2.new(0, 18, 0, 10)
-    Title.BackgroundTransparency = 1
-    Title.Text = title
-    Title.TextColor3 = BloxHub.Settings.Theme.Text
-    Title.TextSize = 14
-    Title.Font = BloxHub.Settings.Font.Bold
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.TextTruncate = Enum.TextTruncate.AtEnd
-    Title.Parent = Notif
+    CreateUICorner(self.Settings.CornerRadius.Large, mainFrame)
     
-    local Message = Instance.new("TextLabel")
-    Message.Size = UDim2.new(1, -55, 0, 38)
-    Message.Position = UDim2.new(0, 18, 0, 32)
-    Message.BackgroundTransparency = 1
-    Message.Text = message
-    Message.TextColor3 = BloxHub.Settings.Theme.TextDim
-    Message.TextSize = 12
-    Message.Font = BloxHub.Settings.Font.Regular
-    Message.TextXAlignment = Enum.TextXAlignment.Left
-    Message.TextYAlignment = Enum.TextYAlignment.Top
-    Message.TextWrapped = true
-    Message.Parent = Notif
+    -- Shadow effect
+    local shadow = Instance.new("ImageLabel")
+    shadow.Name = "Shadow"
+    shadow.Size = UDim2.new(1, 30, 1, 30)
+    shadow.Position = UDim2.new(0, -15, 0, -15)
+    shadow.BackgroundTransparency = 1
+    shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.ImageTransparency = 0.7
+    shadow.ZIndex = -1
+    shadow.Parent = mainFrame
     
-    local CloseBtn = Instance.new("TextButton")
-    CloseBtn.Size = UDim2.new(0, 24, 0, 24)
-    CloseBtn.Position = UDim2.new(1, -32, 0, 10)
-    CloseBtn.BackgroundTransparency = 1
-    CloseBtn.Text = "✕"
-    CloseBtn.TextColor3 = BloxHub.Settings.Theme.TextDim
-    CloseBtn.TextSize = 16
-    CloseBtn.Font = BloxHub.Settings.Font.Bold
-    CloseBtn.Parent = Notif
+    -- Header
+    local header = Instance.new("Frame")
+    header.Name = "Header"
+    header.Size = UDim2.new(1, 0, 0, 45)
+    header.BackgroundColor3 = self.Settings.Theme.Primary
+    header.BorderSizePixel = 0
+    header.Parent = mainFrame
     
-    BloxHub.Core.Tween(Notif, {Size = UDim2.new(1, 0, 0, 75)}, 0.3, Enum.EasingStyle.Back)
+    CreateUICorner(self.Settings.CornerRadius.Large, header)
     
-    local function closeNotif()
-        BloxHub.Core.Tween(Notif, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
-        task.wait(0.2)
-        Notif:Destroy()
+    -- Title
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "Title"
+    titleLabel.Size = UDim2.new(1, -100, 1, 0)
+    titleLabel.Position = UDim2.new(0, 15, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = window.Title
+    titleLabel.TextColor3 = self.Settings.Theme.Text
+    titleLabel.TextSize = 18
+    titleLabel.Font = self.Settings.FontBold
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = header
+    
+    -- Minimize button
+    local minimizeBtn = Instance.new("TextButton")
+    minimizeBtn.Name = "MinimizeBtn"
+    minimizeBtn.Size = UDim2.new(0, 35, 0, 35)
+    minimizeBtn.Position = UDim2.new(1, -45, 0.5, -17.5)
+    minimizeBtn.BackgroundColor3 = self.Settings.Theme.Secondary
+    minimizeBtn.Text = "—"
+    minimizeBtn.TextColor3 = self.Settings.Theme.Text
+    minimizeBtn.TextSize = 16
+    minimizeBtn.Font = self.Settings.FontBold
+    minimizeBtn.Parent = header
+    
+    CreateUICorner(self.Settings.CornerRadius.Small, minimizeBtn)
+    
+    minimizeBtn.MouseButton1Click:Connect(function()
+        window:Toggle()
+    end)
+    
+    minimizeBtn.MouseEnter:Connect(function()
+        Tween(minimizeBtn, {BackgroundColor3 = self.Settings.Theme.Accent}, 0.2)
+    end)
+    
+    minimizeBtn.MouseLeave:Connect(function()
+        Tween(minimizeBtn, {BackgroundColor3 = self.Settings.Theme.Secondary}, 0.2)
+    end)
+    
+    -- Tab container
+    local tabContainer = Instance.new("Frame")
+    tabContainer.Name = "TabContainer"
+    tabContainer.Size = UDim2.new(1, -20, 0, 35)
+    tabContainer.Position = UDim2.new(0, 10, 0, 55)
+    tabContainer.BackgroundTransparency = 1
+    tabContainer.Parent = mainFrame
+    
+    local tabLayout = Instance.new("UIListLayout")
+    tabLayout.FillDirection = Enum.FillDirection.Horizontal
+    tabLayout.Padding = UDim.new(0, 5)
+    tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    tabLayout.Parent = tabContainer
+    
+    -- Content container
+    local contentContainer = Instance.new("Frame")
+    contentContainer.Name = "ContentContainer"
+    contentContainer.Size = UDim2.new(1, -20, 1, -110)
+    contentContainer.Position = UDim2.new(0, 10, 0, 100)
+    contentContainer.BackgroundTransparency = 1
+    contentContainer.Parent = mainFrame
+    
+    MakeDraggable(mainFrame, header)
+    
+    window.Frame = mainFrame
+    window.Header = header
+    window.TabContainer = tabContainer
+    window.ContentContainer = contentContainer
+    
+    -- Window methods
+    function window:Toggle()
+        self.Visible = not self.Visible
+        self.Frame.Visible = self.Visible
     end
     
-    CloseBtn.MouseButton1Click:Connect(closeNotif)
-    CloseBtn.MouseEnter:Connect(function()
-        CloseBtn.TextColor3 = BloxHub.Settings.Theme.Danger
-    end)
-    CloseBtn.MouseLeave:Connect(function()
-        CloseBtn.TextColor3 = BloxHub.Settings.Theme.TextDim
+    function window:Show()
+        self.Visible = true
+        self.Frame.Visible = true
+    end
+    
+    function window:Hide()
+        self.Visible = false
+        self.Frame.Visible = false
+    end
+    
+    function window:SetTitle(newTitle)
+        self.Title = newTitle
+        titleLabel.Text = newTitle
+    end
+    
+    function window:CreateTab(tabName)
+        return BloxHub.Elements:CreateTab(self, tabName)
+    end
+    
+    function window:CreatePopup(title, options)
+        return BloxHub.Elements:CreatePopup(self, title, options)
+    end
+    
+    function window:RegisterHotkey(name, keyCode, callback)
+        self.Hotkeys[name] = {
+            KeyCode = keyCode,
+            Callback = callback,
+            Enabled = true
+        }
+    end
+    
+    self.State.Windows[window.ID] = window
+    
+    return window
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- ELEMENTS API
+-- ═══════════════════════════════════════════════════════════
+
+function BloxHub.Elements:CreateTab(window, tabName)
+    local tab = {
+        Name = tabName,
+        Window = window,
+        Active = false,
+        Elements = {},
+        Container = nil
+    }
+    
+    -- Tab button
+    local tabBtn = Instance.new("TextButton")
+    tabBtn.Name = "Tab_" .. tabName
+    tabBtn.Size = UDim2.new(0, 100, 1, 0)
+    tabBtn.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
+    tabBtn.Text = tabName
+    tabBtn.TextColor3 = BloxHub.Settings.Theme.Text
+    tabBtn.TextSize = 14
+    tabBtn.Font = BloxHub.Settings.FontSemibold
+    tabBtn.AutoButtonColor = false
+    tabBtn.Parent = window.TabContainer
+    
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, tabBtn)
+    
+    -- Content frame
+    local contentFrame = Instance.new("ScrollingFrame")
+    contentFrame.Name = "TabContent_" .. tabName
+    contentFrame.Size = UDim2.new(1, 0, 1, 0)
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.ScrollBarThickness = 4
+    contentFrame.ScrollBarImageColor3 = BloxHub.Settings.Theme.Accent
+    contentFrame.BorderSizePixel = 0
+    contentFrame.Visible = false
+    contentFrame.Parent = window.ContentContainer
+    
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding = UDim.new(0, 8)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Parent = contentFrame
+    
+    tab.Button = tabBtn
+    tab.Container = contentFrame
+    
+    tabBtn.MouseButton1Click:Connect(function()
+        tab:Activate()
     end)
     
-    task.delay(duration, function()
-        if Notif and Notif.Parent then
-            closeNotif()
+    tabBtn.MouseEnter:Connect(function()
+        if not tab.Active then
+            Tween(tabBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.2)
         end
     end)
-end
-
--- ═══════════════════════════════════════════════════════════
--- PERSISTENCE SYSTEM
--- ═══════════════════════════════════════════════════════════
-
-function BloxHub.Core.SaveConfig(windowName, config)
-    local success, encoded = pcall(function()
-        return HttpService:JSONEncode(config)
+    
+    tabBtn.MouseLeave:Connect(function()
+        if not tab.Active then
+            Tween(tabBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Secondary}, 0.2)
+        end
     end)
     
-    if success and writefile then
-        writefile("BloxHub_" .. windowName .. ".json", encoded)
-        return true
-    end
-    return false
-end
-
-function BloxHub.Core.LoadConfig(windowName)
-    if readfile and isfile and isfile("BloxHub_" .. windowName .. ".json") then
-        local success, data = pcall(function()
-            return HttpService:JSONDecode(readfile("BloxHub_" .. windowName .. ".json"))
-        end)
-        
-        if success and data then
-            return data
+    function tab:Activate()
+        for _, otherTab in pairs(self.Window.Tabs) do
+            otherTab.Active = false
+            otherTab.Container.Visible = false
+            Tween(otherTab.Button, {BackgroundColor3 = BloxHub.Settings.Theme.Secondary}, 0.2)
         end
+        
+        self.Active = true
+        self.Container.Visible = true
+        self.Window.CurrentTab = self
+        Tween(self.Button, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2)
     end
-    return nil
+    
+    function tab:AddButton(text, callback)
+        return BloxHub.Elements:CreateButton(self, text, callback)
+    end
+    
+    function tab:AddToggle(text, default, callback)
+        return BloxHub.Elements:CreateToggle(self, text, default, callback)
+    end
+    
+    function tab:AddSlider(text, min, max, default, callback)
+        return BloxHub.Elements:CreateSlider(self, text, min, max, default, callback)
+    end
+    
+    function tab:AddKeybind(text, defaultKey, callback)
+        return BloxHub.Elements:CreateKeybind(self, text, defaultKey, callback)
+    end
+    
+    function tab:AddDropdown(text, options, callback)
+        return BloxHub.Elements:CreateDropdown(self, text, options, callback)
+    end
+    
+    function tab:AddTextBox(text, placeholder, callback)
+        return BloxHub.Elements:CreateTextBox(self, text, placeholder, callback)
+    end
+    
+    function tab:AddLabel(text, config)
+        return BloxHub.Elements:CreateLabel(self, text, config)
+    end
+    
+    function tab:AddDivider()
+        return BloxHub.Elements:CreateDivider(self)
+    end
+    
+    table.insert(window.Tabs, tab)
+    
+    if #window.Tabs == 1 then
+        tab:Activate()
+    end
+    
+    return tab
 end
 
--- ═══════════════════════════════════════════════════════════
--- UI ELEMENTS FACTORY
--- ═══════════════════════════════════════════════════════════
-
-function BloxHub.Elements.CreateButton(parent, text, callback, options)
-    options = options or {}
+function BloxHub.Elements:CreateButton(tab, text, callback)
+    local button = Instance.new("TextButton")
+    button.Name = "Button_" .. text
+    button.Size = UDim2.new(1, 0, 0, 35)
+    button.BackgroundColor3 = BloxHub.Settings.Theme.Primary
+    button.Text = text
+    button.TextColor3 = BloxHub.Settings.Theme.Text
+    button.TextSize = 14
+    button.Font = BloxHub.Settings.FontSemibold
+    button.AutoButtonColor = false
+    button.Parent = tab.Container
     
-    local Button = Instance.new("TextButton")
-    Button.Size = options.Size or UDim2.new(1, 0, 0, 38)
-    Button.Position = options.Position or UDim2.new(0, 0, 0, 0)
-    Button.BackgroundColor3 = options.Color or BloxHub.Settings.Theme.Secondary
-    Button.Text = ""
-    Button.AutoButtonColor = false
-    Button.ClipsDescendants = true
-    Button.Parent = parent
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, button)
     
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 8)
-    UICorner.Parent = Button
-    
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Color = BloxHub.Settings.Theme.Border
-    UIStroke.Thickness = 1
-    UIStroke.Transparency = 0.6
-    UIStroke.Parent = Button
-    
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -20, 1, 0)
-    Label.Position = UDim2.new(0, 10, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Text = text
-    Label.TextColor3 = BloxHub.Settings.Theme.Text
-    Label.TextSize = 14
-    Label.Font = BloxHub.Settings.Font.Semibold
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Button
-    
-    if options.Icon then
-        Label.Position = UDim2.new(0, 35, 0, 0)
-        
-        local Icon = Instance.new("TextLabel")
-        Icon.Size = UDim2.new(0, 24, 0, 24)
-        Icon.Position = UDim2.new(0, 8, 0.5, -12)
-        Icon.BackgroundTransparency = 1
-        Icon.Text = options.Icon
-        Icon.TextSize = 18
-        Icon.Font = BloxHub.Settings.Font.Regular
-        Icon.Parent = Button
-    end
-    
-    Button.MouseButton1Click:Connect(function()
-        BloxHub.Core.CreateRipple(Button)
+    button.MouseButton1Click:Connect(function()
         if callback then
             callback()
         end
     end)
     
-    Button.MouseEnter:Connect(function()
-        BloxHub.Core.Tween(Button, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2)
-        BloxHub.Core.Tween(UIStroke, {Transparency = 0.3}, 0.2)
+    button.MouseEnter:Connect(function()
+        Tween(button, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2)
     end)
     
-    Button.MouseLeave:Connect(function()
-        BloxHub.Core.Tween(Button, {BackgroundColor3 = options.Color or BloxHub.Settings.Theme.Secondary}, 0.2)
-        BloxHub.Core.Tween(UIStroke, {Transparency = 0.6}, 0.2)
+    button.MouseLeave:Connect(function()
+        Tween(button, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.2)
     end)
     
-    return Button
+    return button
 end
 
-function BloxHub.Elements.CreateToggle(parent, text, default, callback, options)
-    options = options or {}
+function BloxHub.Elements:CreateToggle(tab, text, default, callback)
+    local toggleState = default or false
     
-    local Container = Instance.new("Frame")
-    Container.Size = options.Size or UDim2.new(1, 0, 0, 38)
-    Container.Position = options.Position or UDim2.new(0, 0, 0, 0)
-    Container.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-    Container.BorderSizePixel = 0
-    Container.Parent = parent
+    local container = Instance.new("Frame")
+    container.Name = "Toggle_" .. text
+    container.Size = UDim2.new(1, 0, 0, 35)
+    container.BackgroundColor3 = BloxHub.Settings.Theme.Primary
+    container.BorderSizePixel = 0
+    container.Parent = tab.Container
     
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 8)
-    UICorner.Parent = Container
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, container)
     
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Color = BloxHub.Settings.Theme.Border
-    UIStroke.Thickness = 1
-    UIStroke.Transparency = 0.6
-    UIStroke.Parent = Container
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -60, 1, 0)
+    label.Position = UDim2.new(0, 12, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = BloxHub.Settings.Theme.Text
+    label.TextSize = 14
+    label.Font = BloxHub.Settings.Font
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
     
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -80, 1, 0)
-    Label.Position = UDim2.new(0, 12, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Text = text
-    Label.TextColor3 = BloxHub.Settings.Theme.Text
-    Label.TextSize = 13
-    Label.Font = BloxHub.Settings.Font.Regular
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Container
+    local switch = Instance.new("TextButton")
+    switch.Size = UDim2.new(0, 45, 0, 22)
+    switch.Position = UDim2.new(1, -52, 0.5, -11)
+    switch.BackgroundColor3 = toggleState and BloxHub.Settings.Theme.Accent or BloxHub.Settings.Theme.Secondary
+    switch.Text = ""
+    switch.AutoButtonColor = false
+    switch.Parent = container
     
-    local Switch = Instance.new("TextButton")
-    Switch.Size = UDim2.new(0, 50, 0, 26)
-    Switch.Position = UDim2.new(1, -58, 0.5, -13)
-    Switch.BackgroundColor3 = default and BloxHub.Settings.Theme.Success or Color3.fromRGB(60, 60, 70)
-    Switch.Text = ""
-    Switch.AutoButtonColor = false
-    Switch.Parent = Container
+    CreateUICorner(999, switch)
     
-    local SwitchCorner = Instance.new("UICorner")
-    SwitchCorner.CornerRadius = UDim.new(1, 0)
-    SwitchCorner.Parent = Switch
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 18, 0, 18)
+    knob.Position = toggleState and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    knob.BorderSizePixel = 0
+    knob.Parent = switch
     
-    local Knob = Instance.new("Frame")
-    Knob.Size = UDim2.new(0, 20, 0, 20)
-    Knob.Position = default and UDim2.new(1, -23, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
-    Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Knob.BorderSizePixel = 0
-    Knob.Parent = Switch
+    CreateUICorner(999, knob)
     
-    local KnobCorner = Instance.new("UICorner")
-    KnobCorner.CornerRadius = UDim.new(1, 0)
-    KnobCorner.Parent = Knob
-    
-    local toggleValue = default
-    
-    Switch.MouseButton1Click:Connect(function()
-        toggleValue = not toggleValue
+    switch.MouseButton1Click:Connect(function()
+        toggleState = not toggleState
         
-        BloxHub.Core.Tween(Switch, {
-            BackgroundColor3 = toggleValue and BloxHub.Settings.Theme.Success or Color3.fromRGB(60, 60, 70)
+        Tween(switch, {
+            BackgroundColor3 = toggleState and BloxHub.Settings.Theme.Accent or BloxHub.Settings.Theme.Secondary
         }, 0.2)
         
-        BloxHub.Core.Tween(Knob, {
-            Position = toggleValue and UDim2.new(1, -23, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
-        }, 0.2, Enum.EasingStyle.Quad)
+        Tween(knob, {
+            Position = toggleState and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+        }, 0.2)
         
         if callback then
-            callback(toggleValue)
+            callback(toggleState)
         end
     end)
     
-    Container.MouseEnter:Connect(function()
-        BloxHub.Core.Tween(UIStroke, {Transparency = 0.3}, 0.2)
+    container.MouseEnter:Connect(function()
+        Tween(container, {BackgroundColor3 = BloxHub.Settings.Theme.Secondary}, 0.2)
     end)
     
-    Container.MouseLeave:Connect(function()
-        BloxHub.Core.Tween(UIStroke, {Transparency = 0.6}, 0.2)
+    container.MouseLeave:Connect(function()
+        Tween(container, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.2)
     end)
     
-    Container.GetValue = function() return toggleValue end
-    Container.SetValue = function(value)
-        toggleValue = value
-        Switch.BackgroundColor3 = value and BloxHub.Settings.Theme.Success or Color3.fromRGB(60, 60, 70)
-        Knob.Position = value and UDim2.new(1, -23, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
-    end
-    
-    return Container
+    return {
+        Container = container,
+        GetValue = function() return toggleState end,
+        SetValue = function(_, value)
+            toggleState = value
+            switch.BackgroundColor3 = toggleState and BloxHub.Settings.Theme.Accent or BloxHub.Settings.Theme.Secondary
+            knob.Position = toggleState and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+        end
+    }
 end
 
-function BloxHub.Elements.CreateSlider(parent, text, min, max, default, callback, options)
-    options = options or {}
+function BloxHub.Elements:CreateSlider(tab, text, min, max, default, callback)
+    local sliderValue = default or min
     
-    local Container = Instance.new("Frame")
-    Container.Size = options.Size or UDim2.new(1, 0, 0, 50)
-    Container.Position = options.Position or UDim2.new(0, 0, 0, 0)
-    Container.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-    Container.BorderSizePixel = 0
-    Container.Parent = parent
+    local container = Instance.new("Frame")
+    container.Name = "Slider_" .. text
+    container.Size = UDim2.new(1, 0, 0, 50)
+    container.BackgroundColor3 = BloxHub.Settings.Theme.Primary
+    container.BorderSizePixel = 0
+    container.Parent = tab.Container
     
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 8)
-    UICorner.Parent = Container
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, container)
     
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Color = BloxHub.Settings.Theme.Border
-    UIStroke.Thickness = 1
-    UIStroke.Transparency = 0.6
-    UIStroke.Parent = Container
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 0, 20)
+    label.Position = UDim2.new(0, 12, 0, 5)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = BloxHub.Settings.Theme.Text
+    label.TextSize = 14
+    label.Font = BloxHub.Settings.Font
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
     
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0.6, 0, 0, 22)
-    Label.Position = UDim2.new(0, 12, 0, 8)
-    Label.BackgroundTransparency = 1
-    Label.Text = text
-    Label.TextColor3 = BloxHub.Settings.Theme.Text
-    Label.TextSize = 13
-    Label.Font = BloxHub.Settings.Font.Semibold
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Container
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(0.3, -12, 0, 20)
+    valueLabel.Position = UDim2.new(0.7, 0, 0, 5)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Text = tostring(sliderValue)
+    valueLabel.TextColor3 = BloxHub.Settings.Theme.Accent
+    valueLabel.TextSize = 14
+    valueLabel.Font = BloxHub.Settings.FontBold
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Parent = container
     
-    local ValueLabel = Instance.new("TextLabel")
-    ValueLabel.Size = UDim2.new(0.4, -12, 0, 22)
-    ValueLabel.Position = UDim2.new(0.6, 0, 0, 8)
-    ValueLabel.BackgroundTransparency = 1
-    ValueLabel.Text = tostring(default)
-    ValueLabel.TextColor3 = BloxHub.Settings.Theme.Accent
-    ValueLabel.TextSize = 13
-    ValueLabel.Font = BloxHub.Settings.Font.Bold
-    ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
-    ValueLabel.Parent = Container
+    local sliderBack = Instance.new("Frame")
+    sliderBack.Size = UDim2.new(1, -24, 0, 4)
+    sliderBack.Position = UDim2.new(0, 12, 1, -15)
+    sliderBack.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
+    sliderBack.BorderSizePixel = 0
+    sliderBack.Parent = container
     
-    local SliderBack = Instance.new("Frame")
-    SliderBack.Size = UDim2.new(1, -24, 0, 6)
-    SliderBack.Position = UDim2.new(0, 12, 1, -14)
-    SliderBack.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    SliderBack.BorderSizePixel = 0
-    SliderBack.Parent = Container
+    CreateUICorner(999, sliderBack)
     
-    local SliderCorner = Instance.new("UICorner")
-    SliderCorner.CornerRadius = UDim.new(1, 0)
-    SliderCorner.Parent = SliderBack
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Size = UDim2.new((sliderValue - min) / (max - min), 0, 1, 0)
+    sliderFill.BackgroundColor3 = BloxHub.Settings.Theme.Accent
+    sliderFill.BorderSizePixel = 0
+    sliderFill.Parent = sliderBack
     
-    local SliderFill = Instance.new("Frame")
-    SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    SliderFill.BackgroundColor3 = BloxHub.Settings.Theme.Accent
-    SliderFill.BorderSizePixel = 0
-    SliderFill.Parent = SliderBack
+    CreateUICorner(999, sliderFill)
     
-    local FillCorner = Instance.new("UICorner")
-    FillCorner.CornerRadius = UDim.new(1, 0)
-    FillCorner.Parent = SliderFill
-    
-    local Knob = Instance.new("Frame")
-    Knob.Size = UDim2.new(0, 16, 0, 16)
-    Knob.Position = UDim2.new((default - min) / (max - min), -8, 0.5, -8)
-    Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Knob.BorderSizePixel = 0
-    Knob.ZIndex = 2
-    Knob.Parent = SliderBack
-    
-    local KnobCorner = Instance.new("UICorner")
-    KnobCorner.CornerRadius = UDim.new(1, 0)
-    KnobCorner.Parent = Knob
-    
-    local KnobStroke = Instance.new("UIStroke")
-    KnobStroke.Color = BloxHub.Settings.Theme.Accent
-    KnobStroke.Thickness = 2
-    KnobStroke.Parent = Knob
-    
-    local SliderButton = Instance.new("TextButton")
-    SliderButton.Size = UDim2.new(1, 0, 1, 20)
-    SliderButton.Position = UDim2.new(0, 0, 0, -10)
-    SliderButton.BackgroundTransparency = 1
-    SliderButton.Text = ""
-    SliderButton.Parent = SliderBack
+    local sliderButton = Instance.new("TextButton")
+    sliderButton.Size = UDim2.new(1, 0, 1, 0)
+    sliderButton.BackgroundTransparency = 1
+    sliderButton.Text = ""
+    sliderButton.Parent = sliderBack
     
     local dragging = false
-    local currentValue = default
     
-    local function updateSlider(input)
-        local relativeX = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
-        local value = math.floor(min + (max - min) * relativeX)
-        
-        if value ~= currentValue then
-            currentValue = value
-            ValueLabel.Text = tostring(value)
-            
-            BloxHub.Core.Tween(SliderFill, {Size = UDim2.new(relativeX, 0, 1, 0)}, 0.1)
-            BloxHub.Core.Tween(Knob, {Position = UDim2.new(relativeX, -8, 0.5, -8)}, 0.1)
-            
-            if callback then
-                callback(value)
-            end
-        end
-    end
-    
-    SliderButton.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            BloxHub.Core.Tween(Knob, {Size = UDim2.new(0, 18, 0, 18)}, 0.15, Enum.EasingStyle.Back)
-            updateSlider(input)
-        end
+    sliderButton.MouseButton1Down:Connect(function()
+        dragging = true
     end)
     
-    SliderButton.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
-            BloxHub.Core.Tween(Knob, {Size = UDim2.new(0, 16, 0, 16)}, 0.15)
         end
     end)
     
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            updateSlider(input)
-        end
-    end)
-    
-    Container.MouseEnter:Connect(function()
-        BloxHub.Core.Tween(UIStroke, {Transparency = 0.3}, 0.2)
-    end)
-    
-    Container.MouseLeave:Connect(function()
-        BloxHub.Core.Tween(UIStroke, {Transparency = 0.6}, 0.2)
-    end)
-    
-    Container.GetValue = function() return currentValue end
-    Container.SetValue = function(value)
-        local clampedValue = math.clamp(value, min, max)
-        local relativeX = (clampedValue - min) / (max - min)
-        currentValue = clampedValue
-        ValueLabel.Text = tostring(clampedValue)
-        SliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
-        Knob.Position = UDim2.new(relativeX, -8, 0.5, -8)
-    end
-    
-    return Container
-end
-
-function BloxHub.Elements.CreateKeybind(parent, text, defaultKey, callback, options)
-    options = options or {}
-    
-    local Container = Instance.new("Frame")
-    Container.Size = options.Size or UDim2.new(1, 0, 0, 38)
-    Container.Position = options.Position or UDim2.new(0, 0, 0, 0)
-    Container.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-    Container.BorderSizePixel = 0
-    Container.Parent = parent
-    
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 8)
-    UICorner.Parent = Container
-    
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Color = BloxHub.Settings.Theme.Border
-    UIStroke.Thickness = 1
-    UIStroke.Transparency = 0.6
-    UIStroke.Parent = Container
-    
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0.5, -10, 1, 0)
-    Label.Position = UDim2.new(0, 12, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Text = text
-    Label.TextColor3 = BloxHub.Settings.Theme.Text
-    Label.TextSize = 13
-    Label.Font = BloxHub.Settings.Font.Regular
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Container
-    
-    local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(0.5, -20, 0, 28)
-    Button.Position = UDim2.new(0.5, 10, 0.5, -14)
-    Button.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    Button.Text = tostring(defaultKey):gsub("Enum.KeyCode.", "")
-    Button.TextColor3 = BloxHub.Settings.Theme.Text
-    Button.TextSize = 12
-    Button.Font = BloxHub.Settings.Font.Semibold
-    Button.AutoButtonColor = false
-    Button.Parent = Container
-    
-    local BtnCorner = Instance.new("UICorner")
-    BtnCorner.CornerRadius = UDim.new(0, 6)
-    BtnCorner.Parent = Button
-    
-    local BtnStroke = Instance.new("UIStroke")
-    BtnStroke.Color = BloxHub.Settings.Theme.Border
-    BtnStroke.Thickness = 1
-    BtnStroke.Transparency = 0.7
-    BtnStroke.Parent = Button
-    
-    local currentKey = defaultKey
-    local listening = false
-    
-    Button.MouseButton1Click:Connect(function()
-        Button.Text = "Press any key..."
-        BloxHub.Core.Tween(Button, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2)
-        listening = true
-        BloxHub.State.ListeningHotkey = {
-            Button = Button,
-            Container = Container,
-            Callback = function(key)
-                currentKey = key
-                Button.Text = tostring(key):gsub("Enum.KeyCode.", "")
-                BloxHub.Core.Tween(Button, {BackgroundColor3 = Color3.fromRGB(50, 50, 60)}, 0.2)
-                listening = false
-                if callback then
-                    callback(key)
-                end
-            end,
-            Cancel = function()
-                Button.Text = tostring(currentKey):gsub("Enum.KeyCode.", "")
-                BloxHub.Core.Tween(Button, {BackgroundColor3 = Color3.fromRGB(50, 50, 60)}, 0.2)
-                listening = false
-            end
-        }
-    end)
-    
-    Button.MouseEnter:Connect(function()
-        if not listening then
-            BloxHub.Core.Tween(BtnStroke, {Transparency = 0.3}, 0.2)
-        end
-    end)
-    
-    Button.MouseLeave:Connect(function()
-        if not listening then
-            BloxHub.Core.Tween(BtnStroke, {Transparency = 0.7}, 0.2)
-        end
-    end)
-    
-    Container.GetValue = function() return currentKey end
-    Container.SetValue = function(key)
-        currentKey = key
-        Button.Text = tostring(key):gsub("Enum.KeyCode.", "")
-    end
-    
-    return Container
-end
-
-function BloxHub.Elements.CreateDropdown(parent, text, options, defaultIndex, callback, opts)
-    opts = opts or {}
-    
-    local Container = Instance.new("Frame")
-    Container.Size = opts.Size or UDim2.new(1, 0, 0, 38)
-    Container.Position = opts.Position or UDim2.new(0, 0, 0, 0)
-    Container.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-    Container.BorderSizePixel = 0
-    Container.ClipsDescendants = false
-    Container.ZIndex = 5
-    Container.Parent = parent
-    
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 8)
-    UICorner.Parent = Container
-    
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Color = BloxHub.Settings.Theme.Border
-    UIStroke.Thickness = 1
-    UIStroke.Transparency = 0.6
-    UIStroke.Parent = Container
-    
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0.4, 0, 1, 0)
-    Label.Position = UDim2.new(0, 12, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Text = text
-    Label.TextColor3 = BloxHub.Settings.Theme.Text
-    Label.TextSize = 13
-    Label.Font = BloxHub.Settings.Font.Regular
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Container
-    
-    local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(0.6, -20, 0, 28)
-    Button.Position = UDim2.new(0.4, 10, 0.5, -14)
-    Button.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    Button.Text = options[defaultIndex] or "Select..."
-    Button.TextColor3 = BloxHub.Settings.Theme.Text
-    Button.TextSize = 12
-    Button.Font = BloxHub.Settings.Font.Semibold
-    Button.AutoButtonColor = false
-    Button.ClipsDescendants = true
-    Button.Parent = Container
-    
-    local BtnCorner = Instance.new("UICorner")
-    BtnCorner.CornerRadius = UDim.new(0, 6)
-    BtnCorner.Parent = Button
-    
-    local Arrow = Instance.new("TextLabel")
-    Arrow.Size = UDim2.new(0, 20, 1, 0)
-    Arrow.Position = UDim2.new(1, -20, 0, 0)
-    Arrow.BackgroundTransparency = 1
-    Arrow.Text = "▼"
-    Arrow.TextColor3 = BloxHub.Settings.Theme.TextDim
-    Arrow.TextSize = 10
-    Arrow.Font = BloxHub.Settings.Font.Regular
-    Arrow.Parent = Button
-    
-    local DropdownFrame = Instance.new("Frame")
-    DropdownFrame.Size = UDim2.new(1, 0, 0, 0)
-    DropdownFrame.Position = UDim2.new(0, 0, 1, 5)
-    DropdownFrame.BackgroundColor3 = BloxHub.Settings.Theme.Primary
-    DropdownFrame.BorderSizePixel = 0
-    DropdownFrame.ClipsDescendants = true
-    DropdownFrame.Visible = false
-    DropdownFrame.ZIndex = 10
-    DropdownFrame.Parent = Container
-    
-    local DropCorner = Instance.new("UICorner")
-    DropCorner.CornerRadius = UDim.new(0, 8)
-    DropCorner.Parent = DropdownFrame
-    
-    local DropStroke = Instance.new("UIStroke")
-    DropStroke.Color = BloxHub.Settings.Theme.Border
-    DropStroke.Thickness = 1
-    DropStroke.Transparency = 0.5
-    DropStroke.Parent = DropdownFrame
-    
-    local ListLayout = Instance.new("UIListLayout")
-    ListLayout.Padding = UDim.new(0, 2)
-    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    ListLayout.Parent = DropdownFrame
-    
-    local selectedIndex = defaultIndex
-    local isOpen = false
-    
-    for i, option in ipairs(options) do
-        local OptionButton = Instance.new("TextButton")
-        OptionButton.Size = UDim2.new(1, -8, 0, 32)
-        OptionButton.Position = UDim2.new(0, 4, 0, 0)
-        OptionButton.BackgroundColor3 = i == selectedIndex and BloxHub.Settings.Theme.Accent or Color3.fromRGB(45, 45, 55)
-        OptionButton.Text = option
-        OptionButton.TextColor3 = BloxHub.Settings.Theme.Text
-        OptionButton.TextSize = 12
-        OptionButton.Font = BloxHub.Settings.Font.Regular
-        OptionButton.AutoButtonColor = false
-        OptionButton.ZIndex = 11
-        OptionButton.Parent = DropdownFrame
-        
-        local OptCorner = Instance.new("UICorner")
-        OptCorner.CornerRadius = UDim.new(0, 6)
-        OptCorner.Parent = OptionButton
-        
-        OptionButton.MouseButton1Click:Connect(function()
-            selectedIndex = i
-            Button.Text = option
+    sliderButton.MouseMoved:Connect(function(x)
+        if dragging then
+            local relativeX = math.clamp((x - sliderBack.AbsolutePosition.X) / sliderBack.AbsoluteSize.X, 0, 1)
+            sliderValue = math.floor(min + (max - min) * relativeX)
             
-            for _, child in ipairs(DropdownFrame:GetChildren()) do
-                if child:IsA("TextButton") then
-                    BloxHub.Core.Tween(child, {
-                        BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-                    }, 0.2)
-                end
-            end
-            
-            BloxHub.Core.Tween(OptionButton, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2)
-            
-            task.wait(0.1)
-            isOpen = false
-            BloxHub.Core.Tween(DropdownFrame, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
-            BloxHub.Core.Tween(Arrow, {Rotation = 0}, 0.2)
-            task.wait(0.2)
-            DropdownFrame.Visible = false
+            valueLabel.Text = tostring(sliderValue)
+            Tween(sliderFill, {Size = UDim2.new(relativeX, 0, 1, 0)}, 0.1)
             
             if callback then
-                callback(option, i)
+                callback(sliderValue)
             end
-        end)
-        
-        OptionButton.MouseEnter:Connect(function()
-            if i ~= selectedIndex then
-                BloxHub.Core.Tween(OptionButton, {BackgroundColor3 = Color3.fromRGB(55, 55, 65)}, 0.2)
-            end
-        end)
-        
-        OptionButton.MouseLeave:Connect(function()
-            if i ~= selectedIndex then
-                BloxHub.Core.Tween(OptionButton, {BackgroundColor3 = Color3.fromRGB(45, 45, 55)}, 0.2)
-            end
-        end)
-    end
-    
-    Button.MouseButton1Click:Connect(function()
-        isOpen = not isOpen
-        
-        if isOpen then
-            DropdownFrame.Visible = true
-            local targetHeight = #options * 34 + 8
-            BloxHub.Core.Tween(DropdownFrame, {Size = UDim2.new(1, 0, 0, targetHeight)}, 0.25, Enum.EasingStyle.Back)
-            BloxHub.Core.Tween(Arrow, {Rotation = 180}, 0.2)
-        else
-            BloxHub.Core.Tween(DropdownFrame, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
-            BloxHub.Core.Tween(Arrow, {Rotation = 0}, 0.2)
-            task.wait(0.2)
-            DropdownFrame.Visible = false
         end
     end)
     
-    Container.GetValue = function() return options[selectedIndex], selectedIndex end
-    Container.SetValue = function(index)
-        if index >= 1 and index <= #options then
-            selectedIndex = index
-            Button.Text = options[index]
+    return {
+        Container = container,
+        GetValue = function() return sliderValue end,
+        SetValue = function(_, value)
+            sliderValue = math.clamp(value, min, max)
+            valueLabel.Text = tostring(sliderValue)
+            sliderFill.Size = UDim2.new((sliderValue - min) / (max - min), 0, 1, 0)
         end
-    end
-    
-    return Container
-end
-
-function BloxHub.Elements.CreateTextBox(parent, text, placeholder, callback, options)
-    options = options or {}
-    
-    local Container = Instance.new("Frame")
-    Container.Size = options.Size or UDim2.new(1, 0, 0, 38)
-    Container.Position = options.Position or UDim2.new(0, 0, 0, 0)
-    Container.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-    Container.BorderSizePixel = 0
-    Container.Parent = parent
-    
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 8)
-    UICorner.Parent = Container
-    
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Color = BloxHub.Settings.Theme.Border
-    UIStroke.Thickness = 1
-    UIStroke.Transparency = 0.6
-    UIStroke.Parent = Container
-    
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0.3, 0, 1, 0)
-    Label.Position = UDim2.new(0, 12, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Text = text
-    Label.TextColor3 = BloxHub.Settings.Theme.Text
-    Label.TextSize = 13
-    Label.Font = BloxHub.Settings.Font.Regular
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Container
-    
-    local TextBox = Instance.new("TextBox")
-    TextBox.Size = UDim2.new(0.7, -20, 0, 28)
-    TextBox.Position = UDim2.new(0.3, 10, 0.5, -14)
-    TextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    TextBox.PlaceholderText = placeholder or ""
-    TextBox.PlaceholderColor3 = BloxHub.Settings.Theme.TextDim
-    TextBox.Text = ""
-    TextBox.TextColor3 = BloxHub.Settings.Theme.Text
-    TextBox.TextSize = 12
-    TextBox.Font = BloxHub.Settings.Font.Regular
-    TextBox.ClearButtonMode = Enum.ClearButtonMode.WhileEditing
-    TextBox.Parent = Container
-    
-    local BoxCorner = Instance.new("UICorner")
-    BoxCorner.CornerRadius = UDim.new(0, 6)
-    BoxCorner.Parent = TextBox
-    
-    local BoxPadding = Instance.new("UIPadding")
-    BoxPadding.PaddingLeft = UDim.new(0, 10)
-    BoxPadding.PaddingRight = UDim.new(0, 10)
-    BoxPadding.Parent = TextBox
-    
-    TextBox.Focused:Connect(function()
-        BloxHub.Core.Tween(UIStroke, {Transparency = 0.2, Color = BloxHub.Settings.Theme.Accent}, 0.2)
-    end)
-    
-    TextBox.FocusLost:Connect(function(enterPressed)
-        BloxHub.Core.Tween(UIStroke, {Transparency = 0.6, Color = BloxHub.Settings.Theme.Border}, 0.2)
-        if enterPressed and callback then
-            callback(TextBox.Text)
-        end
-    end)
-    
-    Container.GetValue = function() return TextBox.Text end
-    Container.SetValue = function(value) TextBox.Text = value end
-    
-    return Container
-end
-
-function BloxHub.Elements.CreateLabel(parent, text, options)
-    options = options or {}
-    
-    local Label = Instance.new("TextLabel")
-    Label.Size = options.Size or UDim2.new(1, 0, 0, 28)
-    Label.Position = options.Position or UDim2.new(0, 0, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Text = text
-    Label.TextColor3 = options.Color or BloxHub.Settings.Theme.TextDim
-    Label.TextSize = options.TextSize or 12
-    Label.Font = options.Font or BloxHub.Settings.Font.Regular
-    Label.TextXAlignment = options.Alignment or Enum.TextXAlignment.Left
-    Label.TextWrapped = true
-    Label.Parent = parent
-    
-    if options.Bold then
-        Label.Font = BloxHub.Settings.Font.Bold
-    end
-    
-    Label.SetText = function(newText)
-        Label.Text = newText
-    end
-    
-    return Label
-end
-
-function BloxHub.Elements.CreatePopup(title, content, buttons)
-    local Popup = Instance.new("Frame")
-    Popup.Size = UDim2.new(0, 0, 0, 0)
-    Popup.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Popup.AnchorPoint = Vector2.new(0.5, 0.5)
-    Popup.BackgroundColor3 = BloxHub.Settings.Theme.Primary
-    Popup.BorderSizePixel = 0
-    Popup.ZIndex = 100
-    Popup.Parent = BloxHub.UI.ScreenGui
-    
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 12)
-    UICorner.Parent = Popup
-    
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Color = BloxHub.Settings.Theme.Accent
-    UIStroke.Thickness = 2
-    UIStroke.Parent = Popup
-    
-    local Shadow = Instance.new("ImageLabel")
-    Shadow.Size = UDim2.new(1, 40, 1, 40)
-    Shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-    Shadow.BackgroundTransparency = 1
-    Shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-    Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    Shadow.ImageTransparency = 0.7
-    Shadow.ZIndex = 99
-    Shadow.Parent = BloxHub.UI.ScreenGui
-    
-    local Title = Instance.new("TextLabel")
-    Title.Size = UDim2.new(1, -20, 0, 40)
-    Title.Position = UDim2.new(0, 10, 0, 10)
-    Title.BackgroundTransparency = 1
-    Title.Text = title
-    Title.TextColor3 = BloxHub.Settings.Theme.Text
-    Title.TextSize = 16
-    Title.Font = BloxHub.Settings.Font.Bold
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.Parent = Popup
-    
-    local Content = Instance.new("TextLabel")
-    Content.Size = UDim2.new(1, -40, 0, 60)
-    Content.Position = UDim2.new(0, 20, 0, 55)
-    Content.BackgroundTransparency = 1
-    Content.Text = content
-    Content.TextColor3 = BloxHub.Settings.Theme.TextDim
-    Content.TextSize = 13
-    Content.Font = BloxHub.Settings.Font.Regular
-    Content.TextXAlignment = Enum.TextXAlignment.Left
-    Content.TextYAlignment = Enum.TextYAlignment.Top
-    Content.TextWrapped = true
-    Content.Parent = Popup
-    
-    local ButtonContainer = Instance.new("Frame")
-    ButtonContainer.Size = UDim2.new(1, -40, 0, 40)
-    ButtonContainer.Position = UDim2.new(0, 20, 1, -50)
-    ButtonContainer.BackgroundTransparency = 1
-    ButtonContainer.Parent = Popup
-    
-    local ButtonLayout = Instance.new("UIListLayout")
-    ButtonLayout.FillDirection = Enum.FillDirection.Horizontal
-    ButtonLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-    ButtonLayout.Padding = UDim.new(0, 10)
-    ButtonLayout.Parent = ButtonContainer
-    
-    buttons = buttons or {
-        {Text = "OK", Callback = function() end}
     }
-    
-    for _, buttonData in ipairs(buttons) do
-        local Button = Instance.new("TextButton")
-        Button.Size = UDim2.new(0, 80, 1, 0)
-        Button.BackgroundColor3 = buttonData.Color or BloxHub.Settings.Theme.Accent
-        Button.Text = buttonData.Text
-        Button.TextColor3 = BloxHub.Settings.Theme.Text
-        Button.TextSize = 13
-        Button.Font = BloxHub.Settings.Font.Semibold
-        Button.AutoButtonColor = false
-        Button.Parent = ButtonContainer
-        
-        local BtnCorner = Instance.new("UICorner")
-        BtnCorner.CornerRadius = UDim.new(0, 8)
-        BtnCorner.Parent = Button
-        
-        Button.MouseButton1Click:Connect(function()
-            BloxHub.Core.CreateRipple(Button)
-            
-            if buttonData.Callback then
-                buttonData.Callback()
-            end
-            
-            BloxHub.Core.Tween(Popup, {Size = UDim2.new(0, 0, 0, 0)}, 0.2)
-            BloxHub.Core.Tween(Shadow, {ImageTransparency = 1}, 0.2)
-            task.wait(0.2)
-            Popup:Destroy()
-            Shadow:Destroy()
-        end)
-        
-        Button.MouseEnter:Connect(function()
-            BloxHub.Core.Tween(Button, {BackgroundColor3 = BloxHub.Settings.Theme.AccentHover}, 0.2)
-        end)
-        
-        Button.MouseLeave:Connect(function()
-            BloxHub.Core.Tween(Button, {BackgroundColor3 = buttonData.Color or BloxHub.Settings.Theme.Accent}, 0.2)
-        end)
-    end
-    
-    BloxHub.Core.Tween(Popup, {Size = UDim2.new(0, 400, 0, 180)}, 0.3, Enum.EasingStyle.Back)
-    
-    return Popup
 end
 
--- ═══════════════════════════════════════════════════════════
--- WINDOW & TAB SYSTEM
--- ═══════════════════════════════════════════════════════════
-
-function BloxHub:CreateWindow(title, options)
-    options = options or {}
+function BloxHub.Elements:CreateKeybind(tab, text, defaultKey, callback)
+    local currentKey = defaultKey
+    local currentInputType = nil
     
-    local Window = {
-        Title = title,
-        Tabs = {},
-        CurrentTab = nil,
-        Hotkey = options.Hotkey or BloxHub.Settings.DefaultHotkey,
-        Visible = true
-    }
+    local container = Instance.new("Frame")
+    container.Name = "Keybind_" .. text
+    container.Size = UDim2.new(1, 0, 0, 35)
+    container.BackgroundColor3 = BloxHub.Settings.Theme.Primary
+    container.BorderSizePixel = 0
+    container.Parent = tab.Container
     
-    -- Create ScreenGui if not exists
-    if not BloxHub.UI.ScreenGui then
-        local ScreenGui = Instance.new("ScreenGui")
-        ScreenGui.Name = "BloxHubGUI_" .. title
-        ScreenGui.ResetOnSpawn = false
-        ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        
-        if gethui then
-            ScreenGui.Parent = gethui()
-        elseif syn and syn.protect_gui then
-            syn.protect_gui(ScreenGui)
-            ScreenGui.Parent = game:GetService("CoreGui")
-        else
-            ScreenGui.Parent = game:GetService("CoreGui")
-        end
-        
-        BloxHub.UI.ScreenGui = ScreenGui
-    end
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, container)
     
-    -- Main Frame
-    local MainFrame = Instance.new("Frame")
-    MainFrame.Name = "MainFrame_" .. title
-    MainFrame.Size = UDim2.new(0, 580, 0, 460)
-    MainFrame.Position = UDim2.new(0.5, -290, 0.5, -230)
-    MainFrame.BackgroundColor3 = BloxHub.Settings.Theme.Primary
-    MainFrame.BorderSizePixel = 0
-    MainFrame.ClipsDescendants = true
-    MainFrame.Parent = BloxHub.UI.ScreenGui
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.6, 0, 1, 0)
+    label.Position = UDim2.new(0, 12, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = BloxHub.Settings.Theme.Text
+    label.TextSize = 14
+    label.Font = BloxHub.Settings.Font
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
     
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 14)
-    UICorner.Parent = MainFrame
+    local keyButton = Instance.new("TextButton")
+    keyButton.Size = UDim2.new(0.4, -12, 0, 28)
+    keyButton.Position = UDim2.new(0.6, 0, 0.5, -14)
+    keyButton.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
+    keyButton.Text = GetKeyName(currentKey, currentInputType)
+    keyButton.TextColor3 = BloxHub.Settings.Theme.Text
+    keyButton.TextSize = 12
+    keyButton.Font = BloxHub.Settings.FontSemibold
+    keyButton.AutoButtonColor = false
+    keyButton.Parent = container
     
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Color = BloxHub.Settings.Theme.Border
-    UIStroke.Thickness = 1
-    UIStroke.Transparency = 0.5
-    UIStroke.Parent = MainFrame
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, keyButton)
     
-    -- Header
-    local Header = Instance.new("Frame")
-    Header.Name = "Header"
-    Header.Size = UDim2.new(1, 0, 0, 50)
-    Header.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-    Header.BorderSizePixel = 0
-    Header.Parent = MainFrame
-    
-    local HeaderCorner = Instance.new("UICorner")
-    HeaderCorner.CornerRadius = UDim.new(0, 14)
-    HeaderCorner.Parent = Header
-    
-    local HeaderBar = Instance.new("Frame")
-    HeaderBar.Size = UDim2.new(1, 0, 0, 3)
-    HeaderBar.Position = UDim2.new(0, 0, 1, -3)
-    HeaderBar.BackgroundColor3 = BloxHub.Settings.Theme.Accent
-    HeaderBar.BorderSizePixel = 0
-    HeaderBar.Parent = Header
-    
-    local Logo = Instance.new("TextLabel")
-    Logo.Size = UDim2.new(0, 35, 0, 35)
-    Logo.Position = UDim2.new(0, 12, 0.5, -17.5)
-    Logo.BackgroundTransparency = 1
-    Logo.Text = "🧩"
-    Logo.TextSize = 22
-    Logo.Font = BloxHub.Settings.Font.Regular
-    Logo.Parent = Header
-    
-    local TitleLabel = Instance.new("TextLabel")
-    TitleLabel.Size = UDim2.new(0, 300, 1, 0)
-    TitleLabel.Position = UDim2.new(0, 52, 0, 0)
-    TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = title
-    TitleLabel.TextColor3 = BloxHub.Settings.Theme.Text
-    TitleLabel.TextSize = 18
-    TitleLabel.Font = BloxHub.Settings.Font.Bold
-    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    TitleLabel.Parent = Header
-    
-    -- Control Buttons
-    local CloseBtn = Instance.new("TextButton")
-    CloseBtn.Size = UDim2.new(0, 35, 0, 35)
-    CloseBtn.Position = UDim2.new(1, -42, 0.5, -17.5)
-    CloseBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    CloseBtn.Text = "✕"
-    CloseBtn.TextColor3 = BloxHub.Settings.Theme.Text
-    CloseBtn.TextSize = 16
-    CloseBtn.Font = BloxHub.Settings.Font.Bold
-    CloseBtn.AutoButtonColor = false
-    CloseBtn.Parent = Header
-    
-    local CloseBtnCorner = Instance.new("UICorner")
-    CloseBtnCorner.CornerRadius = UDim.new(0, 8)
-    CloseBtnCorner.Parent = CloseBtn
-    
-    local MinimizeBtn = Instance.new("TextButton")
-    MinimizeBtn.Size = UDim2.new(0, 35, 0, 35)
-    MinimizeBtn.Position = UDim2.new(1, -84, 0.5, -17.5)
-    MinimizeBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    MinimizeBtn.Text = "−"
-    MinimizeBtn.TextColor3 = BloxHub.Settings.Theme.Text
-    MinimizeBtn.TextSize = 20
-    MinimizeBtn.Font = BloxHub.Settings.Font.Bold
-    MinimizeBtn.AutoButtonColor = false
-    MinimizeBtn.Parent = Header
-    
-    local MinBtnCorner = Instance.new("UICorner")
-    MinBtnCorner.CornerRadius = UDim.new(0, 8)
-    MinBtnCorner.Parent = MinimizeBtn
-    
-    CloseBtn.MouseButton1Click:Connect(function()
-        BloxHub.Core.Tween(CloseBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Danger}, 0.15)
-        task.wait(0.15)
-        BloxHub.Core.Tween(MainFrame, {Size = UDim2.new(0, 0, 0, 0)}, 0.3, Enum.EasingStyle.Back)
-        task.wait(0.3)
-        MainFrame:Destroy()
-        BloxHub.Core.Notify("BloxHub", "Window closed", 2, "info")
-    end)
-    
-    MinimizeBtn.MouseButton1Click:Connect(function()
-        Window:Toggle()
-    end)
-    
-    CloseBtn.MouseEnter:Connect(function()
-        BloxHub.Core.Tween(CloseBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Danger}, 0.2)
-    end)
-    
-    CloseBtn.MouseLeave:Connect(function()
-        BloxHub.Core.Tween(CloseBtn, {BackgroundColor3 = Color3.fromRGB(50, 50, 60)}, 0.2)
-    end)
-    
-    MinimizeBtn.MouseEnter:Connect(function()
-        BloxHub.Core.Tween(MinimizeBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2)
-    end)
-    
-    MinimizeBtn.MouseLeave:Connect(function()
-        BloxHub.Core.Tween(MinimizeBtn, {BackgroundColor3 = Color3.fromRGB(50, 50, 60)}, 0.2)
-    end)
-    
-    BloxHub.Core.MakeDraggable(MainFrame, Header)
-    
-    -- Tab Container (Sidebar)
-    local TabContainer = Instance.new("ScrollingFrame")
-    TabContainer.Name = "TabContainer"
-    TabContainer.Size = UDim2.new(0, 160, 1, -70)
-    TabContainer.Position = UDim2.new(0, 10, 0, 60)
-    TabContainer.BackgroundTransparency = 1
-    TabContainer.ScrollBarThickness = 4
-    TabContainer.ScrollBarImageColor3 = BloxHub.Settings.Theme.Accent
-    TabContainer.BorderSizePixel = 0
-    TabContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
-    TabContainer.Parent = MainFrame
-    
-    local TabLayout = Instance.new("UIListLayout")
-    TabLayout.Padding = UDim.new(0, 8)
-    TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    TabLayout.Parent = TabContainer
-    
-    TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        TabContainer.CanvasSize = UDim2.new(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 10)
-    end)
-    
-    -- Content Container
-    local ContentContainer = Instance.new("Frame")
-    ContentContainer.Name = "ContentContainer"
-    ContentContainer.Size = UDim2.new(1, -190, 1, -70)
-    ContentContainer.Position = UDim2.new(0, 180, 0, 60)
-    ContentContainer.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-    ContentContainer.BorderSizePixel = 0
-    ContentContainer.Parent = MainFrame
-    
-    local ContentCorner = Instance.new("UICorner")
-    ContentCorner.CornerRadius = UDim.new(0, 10)
-    ContentCorner.Parent = ContentContainer
-    
-    Window.MainFrame = MainFrame
-    Window.TabContainer = TabContainer
-    Window.ContentContainer = ContentContainer
-    
-    -- Icon Toggle
-    local Icon = Instance.new("TextButton")
-    Icon.Name = "IconToggle"
-    Icon.Size = UDim2.new(0, 120, 0, 45)
-    Icon.Position = BloxHub.State.IconPosition
-    Icon.BackgroundColor3 = BloxHub.Settings.Theme.Accent
-    Icon.Text = "🧩 " .. title
-    Icon.TextColor3 = BloxHub.Settings.Theme.Text
-    Icon.TextSize = 14
-    Icon.Font = BloxHub.Settings.Font.Bold
-    Icon.Visible = false
-    Icon.AutoButtonColor = false
-    Icon.Parent = BloxHub.UI.ScreenGui
-    
-    local IconCorner = Instance.new("UICorner")
-    IconCorner.CornerRadius = UDim.new(0, 10)
-    IconCorner.Parent = Icon
-    
-    local IconStroke = Instance.new("UIStroke")
-    IconStroke.Color = BloxHub.Settings.Theme.AccentHover
-    IconStroke.Thickness = 2
-    IconStroke.Parent = Icon
-    
-    Icon.MouseButton1Click:Connect(function()
-        Window:Toggle()
-    end)
-    
-    Icon.MouseEnter:Connect(function()
-        BloxHub.Core.Tween(Icon, {BackgroundColor3 = BloxHub.Settings.Theme.AccentHover}, 0.2)
-        BloxHub.Core.Tween(Icon, {Size = UDim2.new(0, 125, 0, 48)}, 0.2, Enum.EasingStyle.Back)
-    end)
-    
-    Icon.MouseLeave:Connect(function()
-        BloxHub.Core.Tween(Icon, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2)
-        BloxHub.Core.Tween(Icon, {Size = UDim2.new(0, 120, 0, 45)}, 0.2, Enum.EasingStyle.Back)
-    end)
-    
-    BloxHub.Core.MakeDraggable(Icon)
-    
-    Window.Icon = Icon
-    
-    -- Window Methods
-    function Window:Toggle()
-        self.Visible = not self.Visible
-        
-        if self.Visible then
-            self.Icon.Visible = false
-            self.MainFrame.Visible = true
-            BloxHub.Core.Tween(self.MainFrame, {Size = UDim2.new(0, 580, 0, 460)}, 0.35, Enum.EasingStyle.Back)
-        else
-            BloxHub.Core.Tween(self.MainFrame, {Size = UDim2.new(0, 0, 0, 0)}, 0.3, Enum.EasingStyle.Back)
-            task.wait(0.3)
-            self.MainFrame.Visible = false
-            if BloxHub.Settings.IconEnabled then
-                self.Icon.Visible = true
-            end
-        end
-    end
-    
-    function Window:CreateTab(tabName, options)
-        options = options or {}
-        
-        local Tab = {
-            Name = tabName,
-            Window = self,
-            Elements = {},
-            Visible = false
-        }
-        
-        -- Tab Button
-        local TabButton = Instance.new("TextButton")
-        TabButton.Name = "Tab_" .. tabName
-        TabButton.Size = UDim2.new(1, 0, 0, 42)
-        TabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-        TabButton.Text = ""
-        TabButton.AutoButtonColor = false
-        TabButton.Parent = self.TabContainer
-        
-        local TabCorner = Instance.new("UICorner")
-        TabCorner.CornerRadius = UDim.new(0, 8)
-        TabCorner.Parent = TabButton
-        
-        local TabStroke = Instance.new("UIStroke")
-        TabStroke.Color = BloxHub.Settings.Theme.Border
-        TabStroke.Thickness = 1
-        TabStroke.Transparency = 0.7
-        TabStroke.Parent = TabButton
-        
-        local TabIcon = Instance.new("TextLabel")
-        TabIcon.Size = UDim2.new(0, 24, 0, 24)
-        TabIcon.Position = UDim2.new(0, 12, 0.5, -12)
-        TabIcon.BackgroundTransparency = 1
-        TabIcon.Text = options.Icon or "📋"
-        TabIcon.TextSize = 18
-        TabIcon.Font = BloxHub.Settings.Font.Regular
-        TabIcon.Parent = TabButton
-        
-        local TabLabel = Instance.new("TextLabel")
-        TabLabel.Size = UDim2.new(1, -50, 1, 0)
-        TabLabel.Position = UDim2.new(0, 42, 0, 0)
-        TabLabel.BackgroundTransparency = 1
-        TabLabel.Text = tabName
-        TabLabel.TextColor3 = BloxHub.Settings.Theme.TextDim
-        TabLabel.TextSize = 14
-        TabLabel.Font = BloxHub.Settings.Font.Semibold
-        TabLabel.TextXAlignment = Enum.TextXAlignment.Left
-        TabLabel.Parent = TabButton
-        
-        -- Tab Content
-        local TabContent = Instance.new("ScrollingFrame")
-        TabContent.Name = "Content_" .. tabName
-        TabContent.Size = UDim2.new(1, -20, 1, -20)
-        TabContent.Position = UDim2.new(0, 10, 0, 10)
-        TabContent.BackgroundTransparency = 1
-        TabContent.ScrollBarThickness = 5
-        TabContent.ScrollBarImageColor3 = BloxHub.Settings.Theme.Accent
-        TabContent.BorderSizePixel = 0
-        TabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
-        TabContent.Visible = false
-        TabContent.Parent = self.ContentContainer
-        
-        local ContentLayout = Instance.new("UIListLayout")
-        ContentLayout.Padding = UDim.new(0, 10)
-        ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        ContentLayout.Parent = TabContent
-        
-        ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            TabContent.CanvasSize = UDim2.new(0, 0, 0, ContentLayout.AbsoluteContentSize.Y + 10)
-        end)
-        
-        Tab.Button = TabButton
-        Tab.Content = TabContent
-        
-        TabButton.MouseButton1Click:Connect(function()
-            for _, otherTab in pairs(self.Tabs) do
-                otherTab.Content.Visible = false
-                otherTab.Visible = false
-                BloxHub.Core.Tween(otherTab.Button, {BackgroundColor3 = Color3.fromRGB(50, 50, 60)}, 0.2)
-                BloxHub.Core.Tween(otherTab.Button:FindFirstChild("TextLabel"), {TextColor3 = BloxHub.Settings.Theme.TextDim}, 0.2)
-                local stroke = otherTab.Button:FindFirstChild("UIStroke")
-                if stroke then
-                    BloxHub.Core.Tween(stroke, {Transparency = 0.7}, 0.2)
+    keyButton.MouseButton1Click:Connect(function()
+        keyButton.Text = "..."
+        BloxHub.State.ActiveHotkeyListener = {
+            Button = keyButton,
+            Callback = function(keyCode, inputType, keyName)
+                currentKey = keyCode
+                currentInputType = inputType
+                if callback then
+                    callback(keyCode, inputType, keyName)
                 end
             end
-            
-            TabContent.Visible = true
-            Tab.Visible = true
-            self.CurrentTab = Tab
-            BloxHub.Core.Tween(TabButton, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2)
-            BloxHub.Core.Tween(TabLabel, {TextColor3 = BloxHub.Settings.Theme.Text}, 0.2)
-            BloxHub.Core.Tween(TabStroke, {Transparency = 0.3}, 0.2)
-        end)
-        
-        TabButton.MouseEnter:Connect(function()
-            if not Tab.Visible then
-                BloxHub.Core.Tween(TabStroke, {Transparency = 0.4}, 0.2)
-            end
-        end)
-        
-        TabButton.MouseLeave:Connect(function()
-            if not Tab.Visible then
-                BloxHub.Core.Tween(TabStroke, {Transparency = 0.7}, 0.2)
-            end
-        end)
-        
-        -- Tab Element Methods
-        function Tab:AddButton(text, callback, options)
-            local button = BloxHub.Elements.CreateButton(self.Content, text, callback, options)
-            table.insert(self.Elements, button)
-            return button
-        end
-        
-        function Tab:AddToggle(text, default, callback, options)
-            local toggle = BloxHub.Elements.CreateToggle(self.Content, text, default, callback, options)
-            table.insert(self.Elements, toggle)
-            return toggle
-        end
-        
-        function Tab:AddSlider(text, min, max, default, callback, options)
-            local slider = BloxHub.Elements.CreateSlider(self.Content, text, min, max, default, callback, options)
-            table.insert(self.Elements, slider)
-            return slider
-        end
-        
-        function Tab:AddKeybind(text, defaultKey, callback, options)
-            local keybind = BloxHub.Elements.CreateKeybind(self.Content, text, defaultKey, callback, options)
-            table.insert(self.Elements, keybind)
-            return keybind
-        end
-        
-        function Tab:AddDropdown(text, options, defaultIndex, callback, opts)
-            local dropdown = BloxHub.Elements.CreateDropdown(self.Content, text, options, defaultIndex, callback, opts)
-            table.insert(self.Elements, dropdown)
-            return dropdown
-        end
-        
-        function Tab:AddTextBox(text, placeholder, callback, options)
-            local textbox = BloxHub.Elements.CreateTextBox(self.Content, text, placeholder, callback, options)
-            table.insert(self.Elements, textbox)
-            return textbox
-        end
-        
-        function Tab:AddLabel(text, options)
-            local label = BloxHub.Elements.CreateLabel(self.Content, text, options)
-            table.insert(self.Elements, label)
-            return label
-        end
-        
-        function Tab:AddSection(text)
-            local Section = Instance.new("Frame")
-            Section.Size = UDim2.new(1, 0, 0, 35)
-            Section.BackgroundTransparency = 1
-            Section.Parent = self.Content
-            
-            local Line = Instance.new("Frame")
-            Line.Size = UDim2.new(1, 0, 0, 1)
-            Line.Position = UDim2.new(0, 0, 0.5, 0)
-            Line.BackgroundColor3 = BloxHub.Settings.Theme.Border
-            Line.BorderSizePixel = 0
-            Line.Parent = Section
-            
-            local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(0, 0, 1, 0)
-            Label.Position = UDim2.new(0, 0, 0, 0)
-            Label.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-            Label.Text = " " .. text .. " "
-            Label.TextColor3 = BloxHub.Settings.Theme.Text
-            Label.TextSize = 13
-            Label.Font = BloxHub.Settings.Font.Bold
-            Label.AutomaticSize = Enum.AutomaticSize.X
-            Label.Parent = Section
-            
-            table.insert(self.Elements, Section)
-            return Section
-        end
-        
-        function Tab:AddPopup(title, content, buttons)
-            return BloxHub.Elements.CreatePopup(title, content, buttons)
-        end
-        
-        table.insert(self.Tabs, Tab)
-        
-        -- Auto-select first tab
-        if #self.Tabs == 1 then
-            TabButton.MouseButton1Click:Fire()
-        end
-        
-        return Tab
-    end
+        }
+    end)
     
-    function Window:GetTab(tabName)
-        for _, tab in pairs(self.Tabs) do
-            if tab.Name == tabName then
-                return tab
-            end
+    keyButton.MouseEnter:Connect(function()
+        Tween(keyButton, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2)
+    end)
+    
+    keyButton.MouseLeave:Connect(function()
+        Tween(keyButton, {BackgroundColor3 = BloxHub.Settings.Theme.Secondary}, 0.2)
+    end)
+    
+    return {
+        Container = container,
+        GetKey = function() return currentKey, currentInputType end,
+        SetKey = function(_, keyCode, inputType)
+            currentKey = keyCode
+            currentInputType = inputType
+            keyButton.Text = GetKeyName(keyCode, inputType)
         end
-        return nil
-    end
-    
-    function Window:Notify(title, message, duration, notifType)
-        BloxHub.Core.Notify(title, message, duration, notifType)
-    end
-    
-    table.insert(BloxHub.State.Windows, Window)
-    BloxHub.State.ActiveWindow = Window
-    
-    return Window
+    }
 end
 
--- ═══════════════════════════════════════════════════════════
--- INPUT HANDLING
--- ═══════════════════════════════════════════════════════════
-
-function BloxHub:SetupInputHandling()
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
+function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
+    local selectedOption = options[1] or "None"
+    local expanded = false
+    
+    local container = Instance.new("Frame")
+    container.Name = "Dropdown_" .. text
+    container.Size = UDim2.new(1, 0, 0, 35)
+    container.BackgroundColor3 = BloxHub.Settings.Theme.Primary
+    container.BorderSizePixel = 0
+    container.Parent = tab.Container
+    
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, container)
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.5, 0, 1, 0)
+    label.Position = UDim2.new(0, 12, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = BloxHub.Settings.Theme.Text
+    label.TextSize = 14
+    label.Font = BloxHub.Settings.Font
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
+    
+    local dropdownBtn = Instance.new("TextButton")
+    dropdownBtn.Size = UDim2.new(0.5, -12, 0, 28)
+    dropdownBtn.Position = UDim2.new(0.5, 0, 0.5, -14)
+    dropdownBtn.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
+    dropdownBtn.Text = selectedOption .. " ▼"
+    dropdownBtn.TextColor3 = BloxHub.Settings.Theme.Text
+    dropdownBtn.TextSize = 12
+    dropdownBtn.Font = BloxHub.Settings.FontSemibold
+    dropdownBtn.AutoButtonColor = false
+    dropdownBtn.Parent = container
+    
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, dropdownBtn)
+    
+    local optionsFrame = Instance.new("Frame")
+    optionsFrame.Size = UDim2.new(0.5, -12, 0, #options * 30)
+    optionsFrame.Position = UDim2.new(0.5, 0, 1, 5)
+    optionsFrame.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
+    optionsFrame.BorderSizePixel = 0
+    optionsFrame.Visible = false
+    optionsFrame.ZIndex = 10
+    optionsFrame.Parent = container
+    
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsFrame)
+    
+    local optionsLayout = Instance.new("UIListLayout")
+    optionsLayout.Padding = UDim.new(0, 2)
+    optionsLayout.Parent = optionsFrame
+    
+    for _, option in ipairs(options) do
+        local optionBtn = Instance.new("TextButton")
+        optionBtn.Size = UDim2.new(1, -4, 0, 28)
+        optionBtn.Position = UDim2.new(0, 2, 0, 0)
+        optionBtn.BackgroundColor3 = BloxHub.Settings.Theme.Primary
+        optionBtn.Text = option
+        optionBtn.TextColor3 = BloxHub.Settings.Theme.Text
+        optionBtn.TextSize = 12
+        optionBtn.Font = BloxHub.Settings.Font
+        optionBtn.AutoButtonColor = false
+        optionBtn.Parent = optionsFrame
         
-        -- Keybind listening mode
-        if self.State.ListeningHotkey then
-            local keyName = input.KeyCode.Name
-            
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                keyName = "MouseButton1"
-            elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
-                keyName = "MouseButton2"
-            elseif input.KeyCode == Enum.KeyCode.Escape then
-                self.State.ListeningHotkey.Cancel()
-                self.State.ListeningHotkey = nil
-                return
-            end
-            
-            self.State.ListeningHotkey.Callback(input.KeyCode)
-            self.State.ListeningHotkey = nil
-            return
-        end
+        CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionBtn)
         
-        -- Window hotkey detection
-        for _, window in pairs(self.State.Windows) do
-            if input.KeyCode == window.Hotkey then
-                window:Toggle()
-                break
+        optionBtn.MouseButton1Click:Connect(function()
+            selectedOption = option
+            dropdownBtn.Text = option .. " ▼"
+            expanded = false
+            optionsFrame.Visible = false
+            
+            if callback then
+                callback(option)
             end
+        end)
+        
+        optionBtn.MouseEnter:Connect(function()
+            Tween(optionBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.15)
+        end)
+        
+        optionBtn.MouseLeave:Connect(function()
+            Tween(optionBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.15)
+        end)
+    end
+    
+    dropdownBtn.MouseButton1Click:Connect(function()
+        expanded = not expanded
+        optionsFrame.Visible = expanded
+        
+        if expanded then
+            Tween(container, {Size = UDim2.new(1, 0, 0, 35 + optionsFrame.Size.Y.Offset + 5)}, 0.2)
+        else
+            Tween(container, {Size = UDim2.new(1, 0, 0, 35)}, 0.2)
         end
     end)
+    
+    return {
+        Container = container,
+        GetValue = function() return selectedOption end,
+        SetValue = function(_, value)
+            if table.find(options, value) then
+                selectedOption = value
+                dropdownBtn.Text = value .. " ▼"
+            end
+        end
+    }
+end
+
+function BloxHub.Elements:CreateTextBox(tab, text, placeholder, callback)
+    local container = Instance.new("Frame")
+    container.Name = "TextBox_" .. text
+    container.Size = UDim2.new(1, 0, 0, 35)
+    container.BackgroundColor3 = BloxHub.Settings.Theme.Primary
+    container.BorderSizePixel = 0
+    container.Parent = tab.Container
+    
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, container)
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.35, 0, 1, 0)
+    label.Position = UDim2.new(0, 12, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = BloxHub.Settings.Theme.Text
+    label.TextSize = 14
+    label.Font = BloxHub.Settings.Font
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
+    
+    local textBox = Instance.new("TextBox")
+    textBox.Size = UDim2.new(0.65, -12, 0, 28)
+    textBox.Position = UDim2.new(0.35, 0, 0.5, -14)
+    textBox.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
+    textBox.PlaceholderText = placeholder or "Enter text..."
+    textBox.Text = ""
+    textBox.TextColor3 = BloxHub.Settings.Theme.Text
+    textBox.PlaceholderColor3 = BloxHub.Settings.Theme.TextDim
+    textBox.TextSize = 12
+    textBox.Font = BloxHub.Settings.Font
+    textBox.ClearTextOnFocus = false
+    textBox.Parent = container
+    
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, textBox)
+    CreateUIPadding(8, 8, 0, 0, textBox)
+    
+    textBox.FocusLost:Connect(function(enterPressed)
+        if callback then
+            callback(textBox.Text, enterPressed)
+        end
+    end)
+    
+    return {
+        Container = container,
+        GetValue = function() return textBox.Text end,
+        SetValue = function(_, value)
+            textBox.Text = value
+        end
+    }
+end
+
+function BloxHub.Elements:CreateLabel(tab, text, config)
+    config = config or {}
+    
+    local label = Instance.new("TextLabel")
+    label.Name = "Label_" .. text
+    label.Size = UDim2.new(1, 0, 0, config.Height or 25)
+    label.BackgroundTransparency = config.Background and 0 or 1
+    label.BackgroundColor3 = config.BackgroundColor or BloxHub.Settings.Theme.Primary
+    label.Text = text
+    label.TextColor3 = config.TextColor or BloxHub.Settings.Theme.Text
+    label.TextSize = config.TextSize or 14
+    label.Font = config.Bold and BloxHub.Settings.FontBold or BloxHub.Settings.Font
+    label.TextXAlignment = config.TextXAlignment or Enum.TextXAlignment.Left
+    label.TextWrapped = true
+    label.Parent = tab.Container
+    
+    if not config.Background then
+        CreateUICorner(BloxHub.Settings.CornerRadius.Small, label)
+    end
+    
+    if config.Background then
+        CreateUIPadding(12, 12, 5, 5, label)
+    end
+    
+    return label
+end
+
+function BloxHub.Elements:CreateDivider(tab)
+    local divider = Instance.new("Frame")
+    divider.Name = "Divider"
+    divider.Size = UDim2.new(1, 0, 0, 1)
+    divider.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
+    divider.BorderSizePixel = 0
+    divider.Parent = tab.Container
+    
+    return divider
+end
+
+function BloxHub.Elements:CreatePopup(window, title, options)
+    local popup = {
+        Title = title,
+        Options = options or {},
+        Visible = false
+    }
+    
+    local overlay = Instance.new("Frame")
+    overlay.Name = "PopupOverlay"
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    overlay.BackgroundTransparency = 0.5
+    overlay.BorderSizePixel = 0
+    overlay.Visible = false
+    overlay.ZIndex = 100
+    overlay.Parent = BloxHub.Core.ScreenGui
+    
+    local popupFrame = Instance.new("Frame")
+    popupFrame.Name = "Popup_" .. title
+    popupFrame.Size = UDim2.new(0, 300, 0, 200)
+    popupFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+    popupFrame.BackgroundColor3 = BloxHub.Settings.Theme.Background
+    popupFrame.BorderSizePixel = 0
+    popupFrame.ZIndex = 101
+    popupFrame.Parent = overlay
+    
+    CreateUICorner(BloxHub.Settings.CornerRadius.Large, popupFrame)
+    
+    local header = Instance.new("Frame")
+    header.Size = UDim2.new(1, 0, 0, 40)
+    header.BackgroundColor3 = BloxHub.Settings.Theme.Primary
+    header.BorderSizePixel = 0
+    header.ZIndex = 102
+    header.Parent = popupFrame
+    
+    CreateUICorner(BloxHub.Settings.CornerRadius.Large, header)
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -50, 1, 0)
+    titleLabel.Position = UDim2.new(0, 15, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title
+    titleLabel.TextColor3 = BloxHub.Settings.Theme.Text
+    titleLabel.TextSize = 16
+    titleLabel.Font = BloxHub.Settings.FontBold
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.ZIndex = 102
+    titleLabel.Parent = header
+    
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 30, 0, 30)
+    closeBtn.Position = UDim2.new(1, -35, 0.5, -15)
+    closeBtn.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
+    closeBtn.Text = "×"
+    closeBtn.TextColor3 = BloxHub.Settings.Theme.Text
+    closeBtn.TextSize = 20
+    closeBtn.Font = BloxHub.Settings.FontBold
+    closeBtn.ZIndex = 102
+    closeBtn.Parent = header
+    
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, closeBtn)
+    
+    closeBtn.MouseButton1Click:Connect(function()
+        popup:Hide()
+    end)
+    
+    local contentFrame = Instance.new("ScrollingFrame")
+    contentFrame.Size = UDim2.new(1, -20, 1, -60)
+    contentFrame.Position = UDim2.new(0, 10, 0, 50)
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.ScrollBarThickness = 4
+    contentFrame.ScrollBarImageColor3 = BloxHub.Settings.Theme.Accent
+    contentFrame.BorderSizePixel = 0
+    contentFrame.ZIndex = 102
+    contentFrame.Parent = popupFrame
+    
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding = UDim.new(0, 8)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Parent = contentFrame
+    
+    popup.Overlay = overlay
+    popup.Frame = popupFrame
+    popup.Content = contentFrame
+    
+    function popup:Show()
+        self.Visible = true
+        self.Overlay.Visible = true
+    end
+    
+    function popup:Hide()
+        self.Visible = false
+        self.Overlay.Visible = false
+    end
+    
+    function popup:AddButton(text, callback)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, 0, 0, 35)
+        btn.BackgroundColor3 = BloxHub.Settings.Theme.Primary
+        btn.Text = text
+        btn.TextColor3 = BloxHub.Settings.Theme.Text
+        btn.TextSize = 14
+        btn.Font = BloxHub.Settings.FontSemibold
+        btn.AutoButtonColor = false
+        btn.ZIndex = 102
+        btn.Parent = self.Content
+        
+        CreateUICorner(BloxHub.Settings.CornerRadius.Small, btn)
+        
+        btn.MouseButton1Click:Connect(function()
+            if callback then
+                callback()
+            end
+        end)
+        
+        btn.MouseEnter:Connect(function()
+            Tween(btn, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2)
+        end)
+        
+        btn.MouseLeave:Connect(function()
+            Tween(btn, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.2)
+        end)
+        
+        return btn
+    end
+    
+    function popup:AddLabel(text)
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, 0, 0, 25)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = text
+        lbl.TextColor3 = BloxHub.Settings.Theme.Text
+        lbl.TextSize = 13
+        lbl.Font = BloxHub.Settings.Font
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.TextWrapped = true
+        lbl.ZIndex = 102
+        lbl.Parent = self.Content
+        
+        return lbl
+    end
+    
+    return popup
 end
 
 -- ═══════════════════════════════════════════════════════════
--- LAYOUT HELPERS
+-- LAYOUT UTILITIES
 -- ═══════════════════════════════════════════════════════════
 
 function BloxHub:CreateGrid(parent, columns, cellSize, padding)
-    local GridLayout = Instance.new("UIGridLayout")
-    GridLayout.CellSize = cellSize or UDim2.new(0, 150, 0, 105)
-    GridLayout.CellPadding = padding or UDim2.new(0, 10, 0, 10)
-    GridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    GridLayout.Parent = parent
+    local gridLayout = Instance.new("UIGridLayout")
+    gridLayout.CellSize = cellSize or UDim2.new(0, 140, 0, 100)
+    gridLayout.CellPadding = padding or UDim2.new(0, 10, 0, 10)
+    gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    gridLayout.Parent = parent
     
-    return GridLayout
+    return gridLayout
 end
 
-function BloxHub:CreateVerticalStack(parent, spacing)
-    local ListLayout = Instance.new("UIListLayout")
-    ListLayout.Padding = UDim.new(0, spacing or 10)
-    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    ListLayout.Parent = parent
+function BloxHub:CreateVerticalStack(parent, padding)
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding = UDim.new(0, padding or 8)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Parent = parent
     
-    return ListLayout
+    return listLayout
+end
+
+function BloxHub:CreateHorizontalStack(parent, padding)
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.FillDirection = Enum.FillDirection.Horizontal
+    listLayout.Padding = UDim.new(0, padding or 8)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Parent = parent
+    
+    return listLayout
 end
 
 -- ═══════════════════════════════════════════════════════════
--- THEME SYSTEM
+-- THEME & CUSTOMIZATION
 -- ═══════════════════════════════════════════════════════════
 
 function BloxHub:SetTheme(themeName)
     local themes = {
-        Default = {
-            Primary = Color3.fromRGB(45, 45, 55),
-            Secondary = Color3.fromRGB(35, 35, 45),
-            Accent = Color3.fromRGB(88, 101, 242),
-            AccentHover = Color3.fromRGB(108, 121, 255),
-            Success = Color3.fromRGB(67, 181, 129),
-            Warning = Color3.fromRGB(250, 166, 26),
-            Danger = Color3.fromRGB(237, 66, 69),
-            Text = Color3.fromRGB(255, 255, 255),
-            TextDim = Color3.fromRGB(180, 180, 190),
-            Border = Color3.fromRGB(60, 60, 75)
-        },
         Dark = {
-            Primary = Color3.fromRGB(20, 20, 25),
-            Secondary = Color3.fromRGB(15, 15, 20),
+            Background = Color3.fromRGB(15, 15, 15),
+            Primary = Color3.fromRGB(25, 25, 30),
+            Secondary = Color3.fromRGB(35, 35, 45),
             Accent = Color3.fromRGB(0, 120, 255),
-            AccentHover = Color3.fromRGB(30, 140, 255),
-            Success = Color3.fromRGB(40, 160, 100),
-            Warning = Color3.fromRGB(230, 150, 20),
-            Danger = Color3.fromRGB(220, 50, 50),
-            Text = Color3.fromRGB(240, 240, 245),
-            TextDim = Color3.fromRGB(150, 150, 160),
-            Border = Color3.fromRGB(40, 40, 50)
+            AccentHover = Color3.fromRGB(0, 162, 255),
+            Text = Color3.fromRGB(255, 255, 255),
+            TextDim = Color3.fromRGB(180, 180, 190)
         },
         Light = {
-            Primary = Color3.fromRGB(240, 240, 245),
-            Secondary = Color3.fromRGB(250, 250, 255),
-            Accent = Color3.fromRGB(0, 100, 255),
-            AccentHover = Color3.fromRGB(20, 120, 255),
-            Success = Color3.fromRGB(40, 180, 100),
-            Warning = Color3.fromRGB(255, 160, 20),
-            Danger = Color3.fromRGB(240, 60, 60),
+            Background = Color3.fromRGB(240, 240, 245),
+            Primary = Color3.fromRGB(255, 255, 255),
+            Secondary = Color3.fromRGB(230, 230, 240),
+            Accent = Color3.fromRGB(0, 120, 255),
+            AccentHover = Color3.fromRGB(0, 162, 255),
             Text = Color3.fromRGB(20, 20, 30),
-            TextDim = Color3.fromRGB(100, 100, 120),
-            Border = Color3.fromRGB(200, 200, 210)
+            TextDim = Color3.fromRGB(100, 100, 110)
+        },
+        Purple = {
+            Background = Color3.fromRGB(20, 15, 30),
+            Primary = Color3.fromRGB(30, 25, 45),
+            Secondary = Color3.fromRGB(45, 35, 60),
+            Accent = Color3.fromRGB(138, 43, 226),
+            AccentHover = Color3.fromRGB(158, 63, 246),
+            Text = Color3.fromRGB(255, 255, 255),
+            TextDim = Color3.fromRGB(180, 170, 200)
+        },
+        Green = {
+            Background = Color3.fromRGB(10, 20, 15),
+            Primary = Color3.fromRGB(20, 30, 25),
+            Secondary = Color3.fromRGB(30, 45, 35),
+            Accent = Color3.fromRGB(46, 204, 113),
+            AccentHover = Color3.fromRGB(66, 224, 133),
+            Text = Color3.fromRGB(255, 255, 255),
+            TextDim = Color3.fromRGB(170, 200, 180)
         }
     }
     
-    local theme = themes[themeName] or themes.Default
-    for key, value in pairs(theme) do
+    local selectedTheme = themes[themeName] or themes.Dark
+    
+    for key, value in pairs(selectedTheme) do
         self.Settings.Theme[key] = value
     end
     
-    self.Core.Notify("Theme", "Theme changed to " .. themeName, 2, "success")
+    -- Update all existing windows
+    for _, window in pairs(self.State.Windows) do
+        if window.Frame then
+            window.Frame.BackgroundColor3 = self.Settings.Theme.Background
+            window.Header.BackgroundColor3 = self.Settings.Theme.Primary
+        end
+    end
+end
+
+function BloxHub:CustomizeTheme(customColors)
+    for key, value in pairs(customColors) do
+        if self.Settings.Theme[key] then
+            self.Settings.Theme[key] = value
+        end
+    end
 end
 
 -- ═══════════════════════════════════════════════════════════
--- INITIALIZATION
+-- CONFIG PERSISTENCE
 -- ═══════════════════════════════════════════════════════════
 
-function BloxHub:Initialize()
-    print("╔═══════════════════════════════════════════════╗")
-    print("║     🧩 BloxHub GUI Framework v2.0             ║")
-    print("║     Universal Roblox GUI System               ║")
-    print("╚═══════════════════════════════════════════════╝")
+function BloxHub:SaveConfig(configName)
+    configName = configName or "default"
     
-    self:SetupInputHandling()
+    local config = {
+        Theme = self.Settings.Theme,
+        Windows = {}
+    }
     
-    print("[BloxHub] Framework initialized successfully")
-    print("[BloxHub] Use BloxHub:CreateWindow() to start")
+    for id, window in pairs(self.State.Windows) do
+        config.Windows[id] = {
+            Title = window.Title,
+            Position = window.Frame.Position,
+            Size = window.Frame.Size,
+            Visible = window.Visible,
+            Hotkeys = window.Hotkeys
+        }
+    end
     
-    return self
-end
-
--- ═══════════════════════════════════════════════════════════
--- EXAMPLE USAGE (DEMO)
--- ═══════════════════════════════════════════════════════════
-
-function BloxHub:CreateDefaultExample()
-    local Window = self:CreateWindow("BloxHub Demo", {
-        Hotkey = Enum.KeyCode.LeftAlt
-    })
-    
-    -- Main Tab
-    local MainTab = Window:CreateTab("Main", {Icon = "🏠"})
-    MainTab:AddSection("Features")
-    
-    MainTab:AddToggle("ESP", false, function(value)
-        print("ESP:", value)
-        Window:Notify("ESP", "ESP " .. (value and "enabled" or "disabled"), 2, value and "success" or "info")
-    end, {Icon = "👁️"})
-    
-    MainTab:AddToggle("Aimbot", false, function(value)
-        print("Aimbot:", value)
-    end, {Icon = "🎯"})
-    
-    MainTab:AddToggle("No Recoil", false, function(value)
-        print("No Recoil:", value)
-    end, {Icon = "🔫"})
-    
-    MainTab:AddSection("Configuration")
-    
-    MainTab:AddSlider("FOV", 60, 120, 90, function(value)
-        print("FOV:", value)
+    local success, encoded = pcall(function()
+        return HttpService:JSONEncode(config)
     end)
     
-    MainTab:AddSlider("Smoothness", 0, 100, 50, function(value)
-        print("Smoothness:", value)
+    if success then
+        if writefile then
+            writefile("BloxHub_" .. configName .. ".json", encoded)
+        end
+        self.State.SavedConfigs[configName] = config
+    end
+    
+    return success
+end
+
+function BloxHub:LoadConfig(configName)
+    configName = configName or "default"
+    
+    local config = nil
+    
+    if readfile and isfile and isfile("BloxHub_" .. configName .. ".json") then
+        local success, result = pcall(function()
+            return HttpService:JSONDecode(readfile("BloxHub_" .. configName .. ".json"))
+        end)
+        
+        if success then
+            config = result
+        end
+    end
+    
+    if not config and self.State.SavedConfigs[configName] then
+        config = self.State.SavedConfigs[configName]
+    end
+    
+    if config and config.Theme then
+        for key, value in pairs(config.Theme) do
+            self.Settings.Theme[key] = value
+        end
+    end
+    
+    return config
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- FLOATING ICON TOGGLE
+-- ═══════════════════════════════════════════════════════════
+
+function BloxHub:CreateFloatingIcon(window, config)
+    config = config or {}
+    
+    local icon = Instance.new("TextButton")
+    icon.Name = "FloatingIcon"
+    icon.Size = config.Size or UDim2.new(0, 100, 0, 40)
+    icon.Position = config.Position or UDim2.new(0.5, -50, 0.05, 0)
+    icon.BackgroundColor3 = self.Settings.Theme.Accent
+    icon.Text = config.Text or "🧩 " .. window.Title
+    icon.TextColor3 = self.Settings.Theme.Text
+    icon.TextSize = 14
+    icon.Font = self.Settings.FontBold
+    icon.Visible = false
+    icon.ZIndex = 200
+    icon.Parent = self.Core.ScreenGui
+    
+    CreateUICorner(self.Settings.CornerRadius.Medium, icon)
+    
+    icon.MouseButton1Click:Connect(function()
+        window:Toggle()
+        icon.Visible = not window.Visible
+    end)
+    
+    icon.MouseEnter:Connect(function()
+        Tween(icon, {BackgroundColor3 = self.Settings.Theme.AccentHover}, 0.2)
+    end)
+    
+    icon.MouseLeave:Connect(function()
+        Tween(icon, {BackgroundColor3 = self.Settings.Theme.Accent}, 0.2)
+    end)
+    
+    MakeDraggable(icon)
+    
+    window.FloatingIcon = icon
+    
+    -- Add minimize functionality to window
+    local originalToggle = window.Toggle
+    window.Toggle = function(self)
+        originalToggle(self)
+        if icon and config.ShowOnMinimize then
+            icon.Visible = not self.Visible
+        end
+    end
+    
+    return icon
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- NOTIFICATION SYSTEM
+-- ═══════════════════════════════════════════════════════════
+
+function BloxHub:Notify(title, message, duration, notifType)
+    duration = duration or 3
+    notifType = notifType or "Info"
+    
+    local notifColors = {
+        Info = self.Settings.Theme.Accent,
+        Success = self.Settings.Theme.Success,
+        Warning = self.Settings.Theme.Warning,
+        Error = self.Settings.Theme.Error
+    }
+    
+    local notification = Instance.new("Frame")
+    notification.Name = "Notification"
+    notification.Size = UDim2.new(0, 300, 0, 80)
+    notification.Position = UDim2.new(1, -320, 1, 20)
+    notification.BackgroundColor3 = self.Settings.Theme.Primary
+    notification.BorderSizePixel = 0
+    notification.ZIndex = 300
+    notification.Parent = self.Core.ScreenGui
+    
+    CreateUICorner(self.Settings.CornerRadius.Medium, notification)
+    
+    local accent = Instance.new("Frame")
+    accent.Size = UDim2.new(0, 4, 1, 0)
+    accent.BackgroundColor3 = notifColors[notifType]
+    accent.BorderSizePixel = 0
+    accent.Parent = notification
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -20, 0, 25)
+    titleLabel.Position = UDim2.new(0, 15, 0, 8)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title
+    titleLabel.TextColor3 = self.Settings.Theme.Text
+    titleLabel.TextSize = 15
+    titleLabel.Font = self.Settings.FontBold
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = notification
+    
+    local messageLabel = Instance.new("TextLabel")
+    messageLabel.Size = UDim2.new(1, -20, 1, -35)
+    messageLabel.Position = UDim2.new(0, 15, 0, 33)
+    messageLabel.BackgroundTransparency = 1
+    messageLabel.Text = message
+    messageLabel.TextColor3 = self.Settings.Theme.TextDim
+    messageLabel.TextSize = 13
+    messageLabel.Font = self.Settings.Font
+    messageLabel.TextXAlignment = Enum.TextXAlignment.Left
+    messageLabel.TextYAlignment = Enum.TextYAlignment.Top
+    messageLabel.TextWrapped = true
+    messageLabel.Parent = notification
+    
+    -- Slide in animation
+    Tween(notification, {Position = UDim2.new(1, -320, 1, -100)}, 0.4, Enum.EasingStyle.Back)
+    
+    -- Auto remove after duration
+    task.delay(duration, function()
+        Tween(notification, {Position = UDim2.new(1, -320, 1, 20)}, 0.3)
+        task.wait(0.3)
+        notification:Destroy()
+    end)
+    
+    return notification
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- CLEANUP
+-- ═══════════════════════════════════════════════════════════
+
+function BloxHub:Destroy()
+    for _, connection in pairs(self.Input.Connections) do
+        connection:Disconnect()
+    end
+    
+    if self.Core.ScreenGui then
+        self.Core.ScreenGui:Destroy()
+    end
+    
+    self.State.Windows = {}
+    self.Core.Initialized = false
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- EXAMPLE USAGE & DEFAULT DEMO
+-- ═══════════════════════════════════════════════════════════
+
+function BloxHub:CreateExampleGUI()
+    -- Create main window
+    local mainWindow = self:CreateWindow("BloxHub Framework", {
+        Size = UDim2.new(0, 520, 0, 420),
+        Visible = true
+    })
+    
+    -- Create tabs
+    local featuresTab = mainWindow:CreateTab("Features")
+    local visualsTab = mainWindow:CreateTab("Visuals")
+    local settingsTab = mainWindow:CreateTab("Settings")
+    
+    -- Features Tab
+    featuresTab:AddLabel("Combat Features", {Bold = true, Height = 30})
+    featuresTab:AddToggle("Enable Aimbot", false, function(state)
+        print("Aimbot:", state)
+    end)
+    featuresTab:AddSlider("Aimbot FOV", 1, 100, 60, function(value)
+        print("FOV:", value)
+    end)
+    featuresTab:AddKeybind("Aimbot Hotkey", Enum.KeyCode.E, function(key, inputType, name)
+        print("Aimbot key set to:", name)
+    end)
+    
+    featuresTab:AddDivider()
+    featuresTab:AddLabel("Movement", {Bold = true, Height = 30})
+    featuresTab:AddToggle("Speed Hack", false, function(state)
+        print("Speed:", state)
+    end)
+    featuresTab:AddSlider("Speed Multiplier", 1, 5, 2, function(value)
+        print("Speed Multiplier:", value)
+    end)
+    
+    -- Visuals Tab
+    visualsTab:AddLabel("ESP Settings", {Bold = true, Height = 30})
+    visualsTab:AddToggle("Enable ESP", false, function(state)
+        print("ESP:", state)
+    end)
+    visualsTab:AddToggle("Show Names", true, function(state)
+        print("Show Names:", state)
+    end)
+    visualsTab:AddToggle("Show Distance", true, function(state)
+        print("Show Distance:", state)
+    end)
+    visualsTab:AddDropdown("ESP Type", {"Box", "Outline", "Filled", "3D"}, function(option)
+        print("ESP Type:", option)
+    end)
+    
+    visualsTab:AddDivider()
+    visualsTab:AddLabel("Chams", {Bold = true, Height = 30})
+    visualsTab:AddToggle("Enable Chams", false, function(state)
+        print("Chams:", state)
     end)
     
     -- Settings Tab
-    local SettingsTab = Window:CreateTab("Settings", {Icon = "⚙️"})
-    SettingsTab:AddSection("Hotkeys")
-    
-    SettingsTab:AddKeybind("Toggle GUI", Enum.KeyCode.LeftAlt, function(key)
-        Window.Hotkey = key
-        print("GUI Hotkey:", key)
+    settingsTab:AddLabel("UI Settings", {Bold = true, Height = 30})
+    settingsTab:AddDropdown("Theme", {"Dark", "Light", "Purple", "Green"}, function(theme)
+        BloxHub:SetTheme(theme)
+    end)
+    settingsTab:AddButton("Save Config", function()
+        BloxHub:SaveConfig("default")
+        BloxHub:Notify("Config Saved", "Your configuration has been saved successfully!", 3, "Success")
+    end)
+    settingsTab:AddButton("Load Config", function()
+        BloxHub:LoadConfig("default")
+        BloxHub:Notify("Config Loaded", "Configuration loaded from file!", 3, "Info")
     end)
     
-    SettingsTab:AddKeybind("ESP Toggle", Enum.KeyCode.E, function(key)
-        print("ESP Hotkey:", key)
+    settingsTab:AddDivider()
+    settingsTab:AddLabel("About", {Bold = true, Height = 30})
+    settingsTab:AddLabel("BloxHub Framework v" .. self.Version)
+    settingsTab:AddLabel("Universal Roblox GUI System")
+    settingsTab:AddTextBox("Custom Script", "Paste script here...", function(text, enterPressed)
+        if enterPressed then
+            print("Executing:", text)
+        end
     end)
     
-    SettingsTab:AddSection("Display")
+    -- Create floating icon
+    self:CreateFloatingIcon(mainWindow, {
+        Text = "🧩 BloxHub",
+        ShowOnMinimize = true
+    })
     
-    SettingsTab:AddToggle("Icon Mode", true, function(value)
-        BloxHub.Settings.IconEnabled = value
+    -- Register toggle hotkey
+    mainWindow:RegisterHotkey("ToggleGUI", Enum.KeyCode.RightShift, function()
+        mainWindow:Toggle()
     end)
     
-    SettingsTab:AddDropdown("Theme", {"Default", "Dark", "Light"}, 1, function(option)
-        BloxHub:SetTheme(option)
-    end)
-    
-    -- Info Tab
-    local InfoTab = Window:CreateTab("Info", {Icon = "ℹ️"})
-    InfoTab:AddLabel("BloxHub GUI Framework v2.0", {Bold = true, TextSize = 16})
-    InfoTab:AddLabel("A fully customizable and modular GUI system for Roblox executors.", {TextSize = 12})
-    InfoTab:AddLabel("", {Size = UDim2.new(1, 0, 0, 10)})
-    
-    InfoTab:AddButton("Show Popup", function()
-        InfoTab:AddPopup("Example Popup", "This is a popup example with multiple buttons!", {
-            {Text = "OK", Callback = function() print("OK clicked") end},
-            {Text = "Cancel", Color = BloxHub.Settings.Theme.Danger, Callback = function() print("Cancel clicked") end}
-        })
-    end, {Icon = "💬"})
-    
-    InfoTab:AddSection("Credits")
-    InfoTab:AddLabel("Created by BloxHub Team", {Color = BloxHub.Settings.Theme.Accent})
-    InfoTab:AddLabel("Last Updated: 2025-11-12")
-    
-    Window:Notify("BloxHub", "Successfully loaded! Press LeftAlt to toggle.", 4, "success")
-    
-    return Window
+    return mainWindow
 end
 
--- Initialize and return
-BloxHub:Initialize()
+-- ═══════════════════════════════════════════════════════════
+-- INITIALIZATION & RETURN
+-- ═══════════════════════════════════════════════════════════
 
--- Auto-create example if needed (comment out for library use)
--- BloxHub:CreateDefaultExample()
+-- Auto-initialize
+BloxHub:Init()
 
+-- Show welcome notification
+BloxHub:Notify(
+    "BloxHub Framework Loaded",
+    "Press RightShift to toggle GUI | Version " .. BloxHub.Version,
+    4,
+    "Success"
+)
+
+-- Create example GUI (comment this out in production)
+BloxHub:CreateExampleGUI()
+
+-- Return framework for external use
 return BloxHub
-return BloxHub:Initialize()
