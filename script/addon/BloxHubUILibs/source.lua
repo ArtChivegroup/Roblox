@@ -857,8 +857,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     -- populate options
     for _, option in ipairs(options) do
         local optionBtn = Instance.new("TextButton")
-        optionBtn.Size = UDim2.new(1, -4, 0, itemHeight)
-        optionBtn.Position = UDim2.new(0, 2, 0, 0)
+        optionBtn.Size = UDim2.new(1, -6, 0, 28)
         optionBtn.BackgroundColor3 = BloxHub.Settings.Theme.Primary
         optionBtn.Text = option
         optionBtn.TextColor3 = BloxHub.Settings.Theme.Text
@@ -895,6 +894,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     dropdownBtn.MouseButton1Click:Connect(function()
         expanded = not expanded
         optionsFrame.Visible = expanded
+    end)
 
         if expanded then
             -- calculate full height we want to animate to (but limit visible height)
@@ -1075,20 +1075,23 @@ function BloxHub.Elements:CreatePopup(window, title, options)
         popup:Hide()
     end)
     
-    local contentFrame = Instance.new("ScrollingFrame")
-    contentFrame.Size = UDim2.new(1, -20, 1, -60)
-    contentFrame.Position = UDim2.new(0, 10, 0, 50)
-    contentFrame.BackgroundTransparency = 1
-    contentFrame.ScrollBarThickness = 4
-    contentFrame.ScrollBarImageColor3 = BloxHub.Settings.Theme.Accent
-    contentFrame.BorderSizePixel = 0
-    contentFrame.ZIndex = 102
-    contentFrame.Parent = popupFrame
+    local optionsFrame = Instance.new("ScrollingFrame")
+    optionsFrame.Size = UDim2.new(0.5, -12, 0, math.min(#options * 30, 150))
+    optionsFrame.Position = UDim2.new(0.5, 0, 1, 5)
+    optionsFrame.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
+    optionsFrame.BorderSizePixel = 0
+    optionsFrame.Visible = false
+    optionsFrame.ZIndex = 10
+    optionsFrame.ScrollBarThickness = 4
+    optionsFrame.ScrollBarImageColor3 = BloxHub.Settings.Theme.Accent
+    optionsFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
+    optionsFrame.Parent = container
     
-    local listLayout = Instance.new("UIListLayout")
-    listLayout.Padding = UDim.new(0, 8)
-    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    listLayout.Parent = contentFrame
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsFrame)
+    
+    local optionsLayout = Instance.new("UIListLayout")
+    optionsLayout.Padding = UDim.new(0, 2)
+    optionsLayout.Parent = optionsFrame
     
     popup.Overlay = overlay
     popup.Frame = popupFrame
