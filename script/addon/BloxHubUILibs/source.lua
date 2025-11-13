@@ -1,4 +1,11 @@
-
+--[[
+    ╔═══════════════════════════════════════════════════════════╗
+    ║           BloxHub GUI Framework v2.0                      ║
+    ║           Universal Roblox GUI System                     ║
+    ║           Author: BloxHub                                 ║
+    ║           Single-File Modular Component System            ║
+    ╚═══════════════════════════════════════════════════════════╝
+]]
 
 local BloxHub = {
     Version = "2.0.0",
@@ -51,7 +58,9 @@ local BloxHub = {
     }
 }
 
-
+-- ═══════════════════════════════════════════════════════════
+-- SERVICES
+-- ═══════════════════════════════════════════════════════════
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -61,7 +70,9 @@ local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
-
+-- ═══════════════════════════════════════════════════════════
+-- CORE UTILITIES
+-- ═══════════════════════════════════════════════════════════
 
 local function Tween(instance, properties, duration, style, direction)
     duration = duration or BloxHub.Settings.Animation.Speed
@@ -146,6 +157,9 @@ local function GetKeyName(keyCode, inputType)
     end
 end
 
+-- ═══════════════════════════════════════════════════════════
+-- CORE INITIALIZATION
+-- ═══════════════════════════════════════════════════════════
 
 function BloxHub:Init()
     if self.Core.Initialized then
@@ -222,7 +236,9 @@ function BloxHub:SetupInputHandling()
     table.insert(self.Input.Connections, connection)
 end
 
-
+-- ═══════════════════════════════════════════════════════════
+-- WINDOW API
+-- ═══════════════════════════════════════════════════════════
 
 function BloxHub:CreateWindow(title, config)
     config = config or {}
@@ -294,7 +310,7 @@ function BloxHub:CreateWindow(title, config)
     minimizeBtn.Size = UDim2.new(0, 35, 0, 35)
     minimizeBtn.Position = UDim2.new(1, -45, 0.5, -17.5)
     minimizeBtn.BackgroundColor3 = self.Settings.Theme.Secondary
-    minimizeBtn.Text = "â€”"
+    minimizeBtn.Text = "—"
     minimizeBtn.TextColor3 = self.Settings.Theme.Text
     minimizeBtn.TextSize = 16
     minimizeBtn.Font = self.Settings.FontBold
@@ -385,7 +401,9 @@ function BloxHub:CreateWindow(title, config)
     return window
 end
 
-
+-- ═══════════════════════════════════════════════════════════
+-- ELEMENTS API
+-- ═══════════════════════════════════════════════════════════
 
 function BloxHub.Elements:CreateTab(window, tabName)
     local tab = {
@@ -775,7 +793,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     local selectedOption = options[1] or "None"
     local expanded = false
     
-  
+    -- 主容器
     local container = Instance.new("Frame")
     container.Name = "Dropdown_" .. text
     container.Size = UDim2.new(1, 0, 0, 35)
@@ -785,7 +803,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, container)
     
- 
+    -- 标签
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.5, 0, 1, 0)
     label.Position = UDim2.new(0, 12, 0, 0)
@@ -797,12 +815,12 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = container
     
-
+    -- 下拉按钮
     local dropdownBtn = Instance.new("TextButton")
     dropdownBtn.Size = UDim2.new(0.5, -12, 0, 28)
     dropdownBtn.Position = UDim2.new(0.5, 0, 0.5, -14)
     dropdownBtn.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-    dropdownBtn.Text = selectedOption .. " â–¼"
+    dropdownBtn.Text = selectedOption .. " ▼"
     dropdownBtn.TextColor3 = BloxHub.Settings.Theme.Text
     dropdownBtn.TextSize = 12
     dropdownBtn.Font = BloxHub.Settings.FontSemibold
@@ -811,7 +829,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, dropdownBtn)
     
-
+    -- 选项容器（初始隐藏）
     local optionsContainer = Instance.new("Frame")
     optionsContainer.Name = "DropdownOptions"
     optionsContainer.Size = UDim2.new(0.5, -12, 0, 0)
@@ -824,27 +842,27 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsContainer)
     
-
+    -- 选项列表布局
     local optionsLayout = Instance.new("UIListLayout")
     optionsLayout.Padding = UDim.new(0, 2)
     optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     optionsLayout.Parent = optionsContainer
     
-
+    -- 存储选项对象
     local optionObjects = {}
     
-
+    -- 创建选项函数
     local function createOptions()
-
+        -- 清除旧选项
         for _, obj in pairs(optionObjects) do
             obj:Destroy()
         end
         optionObjects = {}
         
-        local totalHeight = 4 
+        local totalHeight = 4 -- 初始边距
         
         for i, option in ipairs(options) do
-
+            -- 选项背景
             local optionBg = Instance.new("TextButton")
             optionBg.Name = "Option_" .. i
             optionBg.Size = UDim2.new(1, -8, 0, 22)
@@ -857,7 +875,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             
             CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionBg)
             
-            
+            -- 选项文本
             local optionText = Instance.new("TextLabel")
             optionText.Size = UDim2.new(1, -10, 1, 0)
             optionText.Position = UDim2.new(0, 5, 0, 0)
@@ -870,7 +888,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             optionText.ZIndex = 102
             optionText.Parent = optionBg
             
-       
+            -- 选中状态指示器
             local selectedIndicator = Instance.new("Frame")
             selectedIndicator.Name = "SelectedIndicator"
             selectedIndicator.Size = UDim2.new(0, 3, 1, 0)
@@ -881,14 +899,14 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             selectedIndicator.ZIndex = 103
             selectedIndicator.Parent = optionBg
             
-         
+            -- 事件处理
             optionBg.MouseButton1Click:Connect(function()
                 selectedOption = option
-                dropdownBtn.Text = option .. " â–¼"
+                dropdownBtn.Text = option .. " ▼"
                 expanded = false
                 optionsContainer.Visible = false
                 
-               
+                -- 更新所有选项的选中状态
                 for _, obj in pairs(optionObjects) do
                     local indicator = obj:FindFirstChild("SelectedIndicator")
                     if indicator then
@@ -910,24 +928,25 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             end)
             
             table.insert(optionObjects, optionBg)
-            totalHeight = totalHeight + 22 + 2 
+            totalHeight = totalHeight + 22 + 2 -- 选项高度 + 间距
         end
         
-        
+        -- 更新选项容器大小
         optionsContainer.Size = UDim2.new(0.5, -12, 0, totalHeight)
     end
     
+    -- 初始化选项
     createOptions()
     
-    
+    -- 下拉按钮点击事件
     dropdownBtn.MouseButton1Click:Connect(function()
         expanded = not expanded
         optionsContainer.Visible = expanded
         
         if expanded then
-            dropdownBtn.Text = selectedOption .. " â–²"
+            dropdownBtn.Text = selectedOption .. " ▲"
         else
-            dropdownBtn.Text = selectedOption .. " â–¼"
+            dropdownBtn.Text = selectedOption .. " ▼"
         end
     end)
     
@@ -939,16 +958,16 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         Tween(dropdownBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Secondary}, 0.2)
     end)
     
-
+    -- 返回控制对象
     return {
         Container = container,
         GetValue = function() return selectedOption end,
         SetValue = function(_, value)
             if table.find(options, value) then
                 selectedOption = value
-                dropdownBtn.Text = value .. " â–¼"
+                dropdownBtn.Text = value .. " ▼"
                 
-                
+                -- 更新选项选中状态
                 for _, obj in pairs(optionObjects) do
                     local indicator = obj:FindFirstChild("SelectedIndicator")
                     if indicator then
@@ -1106,7 +1125,7 @@ function BloxHub.Elements:CreatePopup(window, title, options)
     closeBtn.Size = UDim2.new(0, 30, 0, 30)
     closeBtn.Position = UDim2.new(1, -35, 0.5, -15)
     closeBtn.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-    closeBtn.Text = "Ã—"
+    closeBtn.Text = "×"
     closeBtn.TextColor3 = BloxHub.Settings.Theme.Text
     closeBtn.TextSize = 20
     closeBtn.Font = BloxHub.Settings.FontBold
@@ -1198,7 +1217,9 @@ function BloxHub.Elements:CreatePopup(window, title, options)
     return popup
 end
 
-
+-- ═══════════════════════════════════════════════════════════
+-- LAYOUT UTILITIES
+-- ═══════════════════════════════════════════════════════════
 
 function BloxHub:CreateGrid(parent, columns, cellSize, padding)
     local gridLayout = Instance.new("UIGridLayout")
@@ -1229,6 +1250,9 @@ function BloxHub:CreateHorizontalStack(parent, padding)
     return listLayout
 end
 
+-- ═══════════════════════════════════════════════════════════
+-- THEME & CUSTOMIZATION
+-- ═══════════════════════════════════════════════════════════
 
 function BloxHub:SetTheme(themeName)
     local themes = {
@@ -1293,6 +1317,9 @@ function BloxHub:CustomizeTheme(customColors)
     end
 end
 
+-- ═══════════════════════════════════════════════════════════
+-- CONFIG PERSISTENCE
+-- ═══════════════════════════════════════════════════════════
 
 function BloxHub:SaveConfig(configName)
     configName = configName or "default"
@@ -1354,7 +1381,9 @@ function BloxHub:LoadConfig(configName)
     return config
 end
 
-
+-- ═══════════════════════════════════════════════════════════
+-- FLOATING ICON TOGGLE
+-- ═══════════════════════════════════════════════════════════
 
 function BloxHub:CreateFloatingIcon(window, config)
     config = config or {}
@@ -1364,7 +1393,7 @@ function BloxHub:CreateFloatingIcon(window, config)
     icon.Size = config.Size or UDim2.new(0, 100, 0, 40)
     icon.Position = config.Position or UDim2.new(0.5, -50, 0.05, 0)
     icon.BackgroundColor3 = self.Settings.Theme.Accent
-    icon.Text = config.Text or "ðŸ§© " .. window.Title
+    icon.Text = config.Text or "🧩 " .. window.Title
     icon.TextColor3 = self.Settings.Theme.Text
     icon.TextSize = 14
     icon.Font = self.Settings.FontBold
@@ -1403,7 +1432,9 @@ function BloxHub:CreateFloatingIcon(window, config)
     return icon
 end
 
-
+-- ═══════════════════════════════════════════════════════════
+-- NOTIFICATION SYSTEM
+-- ═══════════════════════════════════════════════════════════
 
 function BloxHub:Notify(title, message, duration, notifType)
     duration = duration or 3
@@ -1470,7 +1501,9 @@ function BloxHub:Notify(title, message, duration, notifType)
     return notification
 end
 
-
+-- ═══════════════════════════════════════════════════════════
+-- CLEANUP
+-- ═══════════════════════════════════════════════════════════
 
 function BloxHub:Destroy()
     for _, connection in pairs(self.Input.Connections) do
@@ -1486,6 +1519,10 @@ function BloxHub:Destroy()
 end
 
 
+
+-- ═══════════════════════════════════════════════════════════
+-- INITIALIZATION & RETURN
+-- ═══════════════════════════════════════════════════════════
 
 -- Auto-initialize
 BloxHub:Init()
