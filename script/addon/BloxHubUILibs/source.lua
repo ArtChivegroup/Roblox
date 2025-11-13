@@ -793,15 +793,17 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     local selectedOption = options[1] or "None"
     local expanded = false
     
+    -- 主容器
     local container = Instance.new("Frame")
     container.Name = "Dropdown_" .. text
-    container.Size = UDim2.new(1, 0, 0, 35)  -- 保持固定高度
+    container.Size = UDim2.new(1, 0, 0, 35)
     container.BackgroundColor3 = BloxHub.Settings.Theme.Primary
     container.BorderSizePixel = 0
     container.Parent = tab.Container
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, container)
     
+    -- 标签
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.5, 0, 1, 0)
     label.Position = UDim2.new(0, 12, 0, 0)
@@ -813,6 +815,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = container
     
+    -- 下拉按钮
     local dropdownBtn = Instance.new("TextButton")
     dropdownBtn.Size = UDim2.new(0.5, -12, 0, 28)
     dropdownBtn.Position = UDim2.new(0.5, 0, 0.5, -14)
@@ -826,65 +829,136 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, dropdownBtn)
     
-    -- 选项框作为容器的子元素，但使用更高的ZIndex确保它显示在其他元素之上
-    local optionsFrame = Instance.new("Frame")
-    optionsFrame.Name = "DropdownOptions_" .. text
-    optionsFrame.Size = UDim2.new(0.5, -12, 0, math.min(#options * 25, 150))  -- 限制最大高度
-    optionsFrame.Position = UDim2.new(0.5, 0, 1, 5)  -- 相对于容器的位置
-    optionsFrame.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-    optionsFrame.BorderSizePixel = 0
-    optionsFrame.Visible = false
-    optionsFrame.ZIndex = 100  -- 更高的ZIndex确保它显示在其他元素之上
-    optionsFrame.Parent = container
+    -- 选项容器（初始隐藏）
+    local optionsContainer = Instance.new("Frame")
+    optionsContainer.Name = "DropdownOptions"
+    optionsContainer.Size = UDim2.new(0.5, -12, 0, 0)
+    optionsContainer.Position = UDim2.new(0.5, 0, 1, 5)
+    optionsContainer.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
+    optionsContainer.BorderSizePixel = 0
+    optionsContainer.Visible = false
+    optionsContainer.ZIndex = 100
+    optionsContainer.Parent = container
     
-    CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsFrame)
+    CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsContainer)
     
+    -- 选项列表布局
     local optionsLayout = Instance.new("UIListLayout")
     optionsLayout.Padding = UDim.new(0, 2)
-    optionsLayout.Parent = optionsFrame
+    optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    optionsLayout.Parent = optionsContainer
     
-    for _, option in ipairs(options) do
-        local optionBtn = Instance.new("TextButton")
-        optionBtn.Size = UDim2.new(1, -4, 0, 25)  -- 减小高度
-        optionBtn.Position = UDim2.new(0, 2, 0, 0)
-        optionBtn.BackgroundColor3 = BloxHub.Settings.Theme.Primary
-        optionBtn.Text = option
-        optionBtn.TextColor3 = BloxHub.Settings.Theme.Text
-        optionBtn.TextSize = 12
-        optionBtn.Font = BloxHub.Settings.Font
-        optionBtn.AutoButtonColor = false
-        optionBtn.ZIndex = 101  -- 确保按钮在选项框之上
-        optionBtn.Parent = optionsFrame
+    -- 存储选项对象
+    local optionObjects = {}
+    
+    -- 创建选项函数
+    local function createOptions()
+        -- 清除旧选项
+        for _, obj in pairs(optionObjects) do
+            obj:Destroy()
+        end
+        optionObjects = {}
         
-        CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionBtn)
+        local totalHeight = 4 -- 初始边距
         
-        optionBtn.MouseButton1Click:Connect(function()
-            selectedOption = option
-            dropdownBtn.Text = option .. " ▼"
-            expanded = false
-            optionsFrame.Visible = false
+        for i, option in ipairs(options) do
+            -- 选项背景
+            local optionBg = Instance.new("TextButton")
+            optionBg.Name = "Option_" .. i
+            optionBg.Size = UDim2.new(1, -8, 0, 22)
+            optionBg.BackgroundColor3 = BloxHub.Settings.Theme.Primary
+            optionBg.Text = ""
+            optionBg.AutoButtonColor = false
+            optionBg.LayoutOrder = i
+            optionBg.ZIndex = 101
+            optionBg.Parent = optionsContainer
             
-            if callback then
-                callback(option)
-            end
-        end)
+            CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionBg)
+            
+            -- 选项文本
+            local optionText = Instance.new("TextLabel")
+            optionText.Size = UDim2.new(1, -10, 1, 0)
+            optionText.Position = UDim2.new(0, 5, 0, 0)
+            optionText.BackgroundTransparency = 1
+            optionText.Text = option
+            optionText.TextColor3 = BloxHub.Settings.Theme.Text
+            optionText.TextSize = 12
+            optionText.Font = BloxHub.Settings.Font
+            optionText.TextXAlignment = Enum.TextXAlignment.Left
+            optionText.ZIndex = 102
+            optionText.Parent = optionBg
+            
+            -- 选中状态指示器
+            local selectedIndicator = Instance.new("Frame")
+            selectedIndicator.Name = "SelectedIndicator"
+            selectedIndicator.Size = UDim2.new(0, 3, 1, 0)
+            selectedIndicator.Position = UDim2.new(0, 0, 0, 0)
+            selectedIndicator.BackgroundColor3 = BloxHub.Settings.Theme.Accent
+            selectedIndicator.BorderSizePixel = 0
+            selectedIndicator.Visible = (option == selectedOption)
+            selectedIndicator.ZIndex = 103
+            selectedIndicator.Parent = optionBg
+            
+            -- 事件处理
+            optionBg.MouseButton1Click:Connect(function()
+                selectedOption = option
+                dropdownBtn.Text = option .. " ▼"
+                expanded = false
+                optionsContainer.Visible = false
+                
+                -- 更新所有选项的选中状态
+                for _, obj in pairs(optionObjects) do
+                    local indicator = obj:FindFirstChild("SelectedIndicator")
+                    if indicator then
+                        indicator.Visible = (obj.TextLabel.Text == option)
+                    end
+                end
+                
+                if callback then
+                    callback(option)
+                end
+            end)
+            
+            optionBg.MouseEnter:Connect(function()
+                Tween(optionBg, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.15)
+            end)
+            
+            optionBg.MouseLeave:Connect(function()
+                Tween(optionBg, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.15)
+            end)
+            
+            table.insert(optionObjects, optionBg)
+            totalHeight = totalHeight + 22 + 2 -- 选项高度 + 间距
+        end
         
-        optionBtn.MouseEnter:Connect(function()
-            Tween(optionBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.15)
-        end)
-        
-        optionBtn.MouseLeave:Connect(function()
-            Tween(optionBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.15)
-        end)
+        -- 更新选项容器大小
+        optionsContainer.Size = UDim2.new(0.5, -12, 0, totalHeight)
     end
     
+    -- 初始化选项
+    createOptions()
+    
+    -- 下拉按钮点击事件
     dropdownBtn.MouseButton1Click:Connect(function()
         expanded = not expanded
-        optionsFrame.Visible = expanded
+        optionsContainer.Visible = expanded
         
-        -- 不再需要改变容器大小
+        if expanded then
+            dropdownBtn.Text = selectedOption .. " ▲"
+        else
+            dropdownBtn.Text = selectedOption .. " ▼"
+        end
     end)
     
+    dropdownBtn.MouseEnter:Connect(function()
+        Tween(dropdownBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2)
+    end)
+    
+    dropdownBtn.MouseLeave:Connect(function()
+        Tween(dropdownBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Secondary}, 0.2)
+    end)
+    
+    -- 返回控制对象
     return {
         Container = container,
         GetValue = function() return selectedOption end,
@@ -892,7 +966,18 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             if table.find(options, value) then
                 selectedOption = value
                 dropdownBtn.Text = value .. " ▼"
+                
+                -- 更新选项选中状态
+                for _, obj in pairs(optionObjects) do
+                    local indicator = obj:FindFirstChild("SelectedIndicator")
+                    if indicator then
+                        indicator.Visible = (obj.TextLabel.Text == value)
+                    end
+                end
             end
+        end,
+        Refresh = function()
+            createOptions()
         end
     }
 end
