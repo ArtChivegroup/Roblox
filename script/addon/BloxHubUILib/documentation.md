@@ -99,7 +99,8 @@ Registers a hotkey that triggers a callback function.
 -- Toggle the window's visibility when RightShift is pressed
 MyWindow:RegisterHotkey("ToggleGUI", Enum.KeyCode.RightShift, function()
     MyWindow:Toggle()
-end)```
+end)
+```
 
 ### Component API
 
@@ -153,7 +154,8 @@ Creates a button that allows the user to set a keybind.
 ```lua
 mainTab:AddKeybind("Aimbot Key", Enum.KeyCode.E, function(key, input, name)
     BloxHub:Notify("Keybind Set", "Aimbot key is now " .. name)
-end)```
+end)
+```
 
 #### `Tab:AddDropdown(text, options, callback)`
 Creates a dropdown menu for selecting one option from a list.
@@ -254,61 +256,4 @@ settingsTab:AddButton("Save Settings", function()
 end)
 ```
 
-## 📜 Full Example (`example.lua`)
 
-Here is a complete example script that showcases many of the framework's features.
-
-```lua
--- 1. Load the Framework
-local BloxHub = loadstring(game:HttpGet("https://raw.githubusercontent.com/ArtChivegroup/Roblox/refs/heads/main/script/addon/BloxHubUILib/source.lua"))()
-
-if not BloxHub then
-    warn("Failed to load BloxHub Framework.")
-    return
-end
-
--- 2. Create the Main Window and Hotkey
-local MainWindow = BloxHub:CreateWindow("BloxHub Showcase")
-MainWindow:RegisterHotkey("ToggleGUI", Enum.KeyCode.RightShift, function()
-    MainWindow:Toggle()
-end)
-BloxHub:CreateFloatingIcon(MainWindow, {Text = "Toggle Menu", ShowOnMinimize = true})
-
-
--- 3. Create Tabs
-local featuresTab = MainWindow:CreateTab("Main Features")
-local visualsTab = MainWindow:CreateTab("Visuals")
-local settingsTab = MainWindow:CreateTab("Settings")
-
--- 4. Populate the "Main Features" Tab
-featuresTab:AddLabel("Core Components", {Bold = true, TextSize = 16})
-featuresTab:AddButton("Show Notification", function()
-    BloxHub:Notify("Hello!", "This is a test notification.", 3, "Info")
-end)
-featuresTab:AddToggle("Enable Fly", false, function(state) print("Fly state:", state) end)
-featuresTab:AddSlider("WalkSpeed", 16, 100, 16, function(val) game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = val end)
-featuresTab:AddKeybind("Sprint Key", Enum.KeyCode.LeftShift, function(k,i,n) print("Sprint key set to " .. n) end)
-
--- 5. Populate the "Visuals" Tab
-visualsTab:AddLabel("Player ESP", {Bold = true, TextSize = 16})
-visualsTab:AddToggle("Enabled", true)
-visualsTab:AddToggle("Show Boxes", true)
-visualsTab:AddDropdown("Box Style", {"2D Box", "Corner Box"}, function(choice) print("Box style:", choice) end)
-visualsTab:AddDivider()
-visualsTab:AddToggle("Chams", false)
-
--- 6. Populate the "Settings" Tab
-settingsTab:AddLabel("UI Configuration", {Bold = true, TextSize = 16})
-settingsTab:AddDropdown("UI Theme", {"Dark", "Light", "Purple", "Green"}, function(theme)
-    BloxHub:SetTheme(theme)
-end)
-settingsTab:AddButton("Save Config", function()
-    BloxHub:SaveConfig()
-    BloxHub:Notify("Success", "Configuration saved.", 2, "Success")
-end)
-settingsTab:AddButton("Load Config", function()
-    BloxHub:LoadConfig()
-    BloxHub:Notify("Success", "Configuration loaded.", 2, "Success")
-end)
-
-```
