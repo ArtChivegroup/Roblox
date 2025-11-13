@@ -799,7 +799,6 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     container.Size = UDim2.new(1, 0, 0, 35)
     container.BackgroundColor3 = BloxHub.Settings.Theme.Primary
     container.BorderSizePixel = 0
-    container.ZIndex = 50  -- 设置基础ZIndex
     container.Parent = tab.Container
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, container)
@@ -814,7 +813,6 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     label.TextSize = 14
     label.Font = BloxHub.Settings.Font
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.ZIndex = 51  -- 设置ZIndex
     label.Parent = container
     
     -- 下拉按钮
@@ -827,21 +825,20 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     dropdownBtn.TextSize = 12
     dropdownBtn.Font = BloxHub.Settings.FontSemibold
     dropdownBtn.AutoButtonColor = false
-    dropdownBtn.ZIndex = 51  -- 设置ZIndex
     dropdownBtn.Parent = container
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, dropdownBtn)
     
     -- 选项容器（初始隐藏）
-    -- 重要修改：将选项容器直接添加到ScreenGui而不是主容器
     local optionsContainer = Instance.new("Frame")
-    optionsContainer.Name = "DropdownOptions_" .. text
+    optionsContainer.Name = "DropdownOptions"
     optionsContainer.Size = UDim2.new(0.5, -12, 0, 0)
+    optionsContainer.Position = UDim2.new(0.5, 0, 1, 5)
     optionsContainer.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
     optionsContainer.BorderSizePixel = 0
     optionsContainer.Visible = false
-    optionsContainer.ZIndex = 1000  -- 设置更高的ZIndex确保在最前面
-    optionsContainer.Parent = BloxHub.Core.ScreenGui  -- 直接添加到ScreenGui
+    optionsContainer.ZIndex = 100
+    optionsContainer.Parent = container
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsContainer)
     
@@ -873,7 +870,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             optionBg.Text = ""
             optionBg.AutoButtonColor = false
             optionBg.LayoutOrder = i
-            optionBg.ZIndex = 1001  -- 设置更高的ZIndex
+            optionBg.ZIndex = 101
             optionBg.Parent = optionsContainer
             
             CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionBg)
@@ -888,7 +885,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             optionText.TextSize = 12
             optionText.Font = BloxHub.Settings.Font
             optionText.TextXAlignment = Enum.TextXAlignment.Left
-            optionText.ZIndex = 1002  -- 设置更高的ZIndex
+            optionText.ZIndex = 102
             optionText.Parent = optionBg
             
             -- 选中状态指示器
@@ -899,7 +896,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             selectedIndicator.BackgroundColor3 = BloxHub.Settings.Theme.Accent
             selectedIndicator.BorderSizePixel = 0
             selectedIndicator.Visible = (option == selectedOption)
-            selectedIndicator.ZIndex = 1003  -- 设置更高的ZIndex
+            selectedIndicator.ZIndex = 103
             selectedIndicator.Parent = optionBg
             
             -- 事件处理
@@ -948,10 +945,6 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         
         if expanded then
             dropdownBtn.Text = selectedOption .. " ▲"
-            -- 计算并设置选项容器的位置，使其显示在下拉按钮下方
-            local buttonPos = dropdownBtn.AbsolutePosition
-            local buttonSize = dropdownBtn.AbsoluteSize
-            optionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y)
         else
             dropdownBtn.Text = selectedOption .. " ▼"
         end
