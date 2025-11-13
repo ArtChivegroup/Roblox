@@ -830,11 +830,17 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     dropdownBtn.Parent = container
 
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, dropdownBtn)
-
-    -- Use ScrollingFrame to contain many options without growing infinitely
+    
+    -- Configuration for dropdown options display
+    local maxVisibleOptions = 5
+    local itemHeight = 28
+    local itemPadding = 2
+    
+    -- Calculate visible height (limited to maxVisibleOptions)
     local visibleCount = math.min(#options, maxVisibleOptions)
     local optionsHeight = (visibleCount * itemHeight) + math.max(0, (visibleCount - 1) * itemPadding)
-
+    
+    -- Create ScrollingFrame for dropdown options
     local optionsFrame = Instance.new("ScrollingFrame")
     optionsFrame.Size = UDim2.new(0.5, -12, 0, optionsHeight)
     optionsFrame.Position = UDim2.new(0.5, 0, 1, 5)
@@ -842,22 +848,22 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     optionsFrame.BorderSizePixel = 0
     optionsFrame.Visible = false
     optionsFrame.ZIndex = 10
-    optionsFrame.CanvasSize = UDim2.new(0, 0, 0, (#options * (itemHeight + itemPadding)))
-    optionsFrame.ScrollBarThickness = 6
+    optionsFrame.CanvasSize = UDim2.new(0, 0, 0, (#options * itemHeight) + ((#options - 1) * itemPadding))
+    optionsFrame.ScrollBarThickness = 4
     optionsFrame.ScrollBarImageColor3 = BloxHub.Settings.Theme.Accent
     optionsFrame.Parent = container
-
+    
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsFrame)
-
+    
     local optionsLayout = Instance.new("UIListLayout")
     optionsLayout.Padding = UDim.new(0, itemPadding)
     optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     optionsLayout.Parent = optionsFrame
-
-    -- populate options
+    
+    -- Populate dropdown options
     for _, option in ipairs(options) do
         local optionBtn = Instance.new("TextButton")
-        optionBtn.Size = UDim2.new(1, -6, 0, 28)
+        optionBtn.Size = UDim2.new(1, -8, 0, itemHeight)
         optionBtn.BackgroundColor3 = BloxHub.Settings.Theme.Primary
         optionBtn.Text = option
         optionBtn.TextColor3 = BloxHub.Settings.Theme.Text
@@ -865,47 +871,35 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         optionBtn.Font = BloxHub.Settings.Font
         optionBtn.AutoButtonColor = false
         optionBtn.Parent = optionsFrame
-
+        
         CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionBtn)
-
+        
         optionBtn.MouseButton1Click:Connect(function()
             selectedOption = option
             dropdownBtn.Text = option .. " ▼"
             expanded = false
             optionsFrame.Visible = false
-
-            -- restore container size to default 35 height
-            Tween(container, {Size = UDim2.new(1, 0, 0, 35)}, 0.15)
-
+            
             if callback then
                 callback(option)
             end
         end)
-
+        
         optionBtn.MouseEnter:Connect(function()
-            Tween(optionBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.12)
+            Tween(optionBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.15)
         end)
-
+        
         optionBtn.MouseLeave:Connect(function()
-            Tween(optionBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.12)
+            Tween(optionBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.15)
         end)
     end
-
+    
+    -- Toggle dropdown visibility
     dropdownBtn.MouseButton1Click:Connect(function()
         expanded = not expanded
         optionsFrame.Visible = expanded
     end)
-
-        if expanded then
-            -- calculate full height we want to animate to (but limit visible height)
-            local fullHeight = (#options * (itemHeight + itemPadding)) - itemPadding -- total content height
-            local targetHeight = math.min(fullHeight, optionsHeight)
-            Tween(container, {Size = UDim2.new(1, 0, 0, 35 + targetHeight + 5)}, 0.18)
-        else
-            Tween(container, {Size = UDim2.new(1, 0, 0, 35)}, 0.15)
-        end
-    end)
-
+    
     return {
         Container = container,
         GetValue = function() return selectedOption end,
