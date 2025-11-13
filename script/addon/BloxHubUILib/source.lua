@@ -1511,88 +1511,6 @@ function BloxHub:Notify(title, message, duration, notifType)
     return notification
 end
 
--- ═══════════════════════════════════════════════════════════
--- EXAMPLE GUI
--- ═══════════════════════════════════════════════════════════
-
-function BloxHub:CreateExampleGUI()
-    local Main = self:CreateWindow("BloxHub Example")
-    
-    -- Register a hotkey to toggle the main window
-    Main:RegisterHotkey("ToggleGUI", Enum.KeyCode.RightShift, function()
-        Main:Toggle()
-    end)
-    
-    self:CreateFloatingIcon(Main, {Text = "Toggle GUI", ShowOnMinimize = true})
-
-    local featuresTab = Main:CreateTab("Features")
-    
-    featuresTab:AddButton("Test Button", function()
-        self:Notify("Button Clicked", "The test button was pressed.", 3, "Info")
-    end)
-    
-    featuresTab:AddToggle("Enable Feature", false, function(state)
-        self:Notify("Toggle Changed", "Feature is now " .. (state and "ON" or "OFF"), 2, "Success")
-    end)
-    
-    featuresTab:AddSlider("Field of View", 1, 120, 70, function(value)
-        print("Slider Value:", value)
-    end)
-    
-    featuresTab:AddKeybind("Aimbot Key", Enum.KeyCode.E, function(key, inputType, keyName)
-        self:Notify("Keybind Set", "Aimbot key set to " .. keyName, 3, "Info")
-    end)
-    
-    featuresTab:AddDropdown("Select Mode", {"Option 1", "Option 2", "Another Choice"}, function(choice)
-        self:Notify("Dropdown", "Selected: " .. choice, 2)
-    end)
-    
-    featuresTab:AddTextBox("Username", "Enter your name...", function(text, enterPressed)
-        if enterPressed then
-            self:Notify("Text Submitted", "Welcome, " .. text, 3, "Success")
-        end
-    end)
-    
-    featuresTab:AddDivider()
-    featuresTab:AddLabel("Section Title", {Bold = true, TextSize = 16})
-    featuresTab:AddLabel("This is an informational label about the section below. It can wrap text if needed.", {Height = 40})
-
-    local visualsTab = Main:CreateTab("Visuals")
-    visualsTab:AddToggle("ESP", true)
-    visualsTab:AddToggle("Chams", false)
-
-    local settingsTab = Main:CreateTab("Settings")
-    settingsTab:AddDropdown("Theme", {"Dark", "Light", "Purple", "Green"}, function(theme)
-        self:SetTheme(theme)
-    end)
-    settingsTab:AddButton("Save Config", function()
-        self:SaveConfig()
-        self:Notify("Success", "Configuration saved.", 2, "Success")
-    end)
-end
-
-
--- ═══════════════════════════════════════════════════════════
--- CLEANUP
--- ═══════════════════════════════════════════════════════════
-
-function BloxHub:Destroy()
-    for _, connection in pairs(self.Input.Connections) do
-        connection:Disconnect()
-    end
-    
-    if self.Core.ScreenGui then
-        self.Core.ScreenGui:Destroy()
-    end
-    
-    self.State = {
-        Windows = {},
-        ActiveHotkeyListener = nil,
-        DraggingElement = nil,
-        SavedConfigs = {}
-    }
-    self.Core.Initialized = false
-end
 
 -- ═══════════════════════════════════════════════════════════
 -- INITIALIZATION & RETURN
@@ -1609,8 +1527,7 @@ BloxHub:Notify(
     "Success"
 )
 
--- Create example GUI (comment this out in production)
-BloxHub:CreateExampleGUI()
+
 
 -- Return framework for external use
 return BloxHub
