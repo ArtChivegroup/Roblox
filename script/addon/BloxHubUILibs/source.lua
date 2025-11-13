@@ -1595,7 +1595,22 @@ function BloxHub:CreateExampleGUI()
 end
 
 -- ═══════════════════════════════════════════════════════════
--- RETURN FRAMEWORK
+-- INITIALIZATION & RETURN
 -- ═══════════════════════════════════════════════════════════
 
-return BloxHub
+-- Auto-initialize
+BloxHub:Init()
+
+-- Show welcome notification
+BloxHub:Notify(
+    "BloxHub Framework Loaded",
+    "Press RightShift to toggle GUI | Version " .. BloxHub.Version,
+    4,
+    "Success"
+)
+
+-- Create example GUI (comment this out in production)
+BloxHub:CreateExampleGUI()
+
+-- Return framework for external use
+return BloxHu
