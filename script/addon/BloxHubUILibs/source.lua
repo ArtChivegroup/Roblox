@@ -849,7 +849,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     optionsContainer.Visible = false
     optionsContainer.ClipsDescendants = true
     optionsContainer.ZIndex = 500 -- High ZIndex to be on top
-    optionsContainer.Parent = tab.Window.Frame -- **FIX**: Parent to window frame
+    optionsContainer.Parent = tab.Window.Frame -- Parent to window frame to appear on top
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsContainer)
     
@@ -890,7 +890,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             
             -- Option text
             local optionText = Instance.new("TextLabel")
-            optionText.Name = "OptionText" -- **FIX**: Named for easy reference
+            optionText.Name = "OptionText"
             optionText.Size = UDim2.new(1, -15, 1, 0)
             optionText.Position = UDim2.new(0, 10, 0, 0)
             optionText.BackgroundTransparency = 1
@@ -924,7 +924,6 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
                 for _, obj in pairs(optionObjects) do
                     local indicator = obj:FindFirstChild("SelectedIndicator")
                     if indicator then
-                        -- **FIX**: Correct reference to OptionText
                         indicator.Visible = (obj.OptionText.Text == option)
                     end
                 end
@@ -958,9 +957,23 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         expanded = not expanded
         
         if expanded then
-            -- **FIX**: Recalculate position and size when opening
-            optionsContainer.Size = UDim2.new(0, dropdownBtn.AbsoluteSize.X, 0, optionsContainer.AbsoluteSize.Y)
-            optionsContainer.Position = UDim2.new(0, dropdownBtn.AbsolutePosition.X, 0, dropdownBtn.AbsolutePosition.Y + dropdownBtn.AbsoluteSize.Y + 5)
+            -- === START OF FIX ===
+            -- Get the absolute position of the main window and the button
+            local windowFrame = tab.Window.Frame
+            local windowPos = windowFrame.AbsolutePosition
+            local btnPos = dropdownBtn.AbsolutePosition
+            local btnSize = dropdownBtn.AbsoluteSize
+
+            -- Calculate the position of the options container RELATIVE to the window frame
+            -- Formula: (Button's Absolute Position) - (Window's Absolute Position)
+            local newX = btnPos.X - windowPos.X
+            local newY = (btnPos.Y + btnSize.Y + 5) - windowPos.Y -- 5px padding below the button
+            
+            optionsContainer.Position = UDim2.fromOffset(newX, newY)
+            -- The width should match the button's width
+            optionsContainer.Size = UDim2.fromOffset(btnSize.X, optionsContainer.AbsoluteSize.Y)
+            -- === END OF FIX ===
+
             dropdownBtn.Text = selectedOption .. " ▲"
             optionsContainer.Visible = true
         else
@@ -990,7 +1003,6 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
                 for _, obj in pairs(optionObjects) do
                     local indicator = obj:FindFirstChild("SelectedIndicator")
                     if indicator then
-                        -- **FIX**: Correct reference to OptionText
                         indicator.Visible = (obj.OptionText.Text == value)
                     end
                 end
