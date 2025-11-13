@@ -98,9 +98,11 @@ local function MakeDraggable(frame, dragHandle)
             mousePos = input.Position
             framePos = frame.Position
             
-            input.Changed:Connect(function()
+            local endConnection
+            endConnection = input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
+                    endConnection:Disconnect()
                 end
             end)
         end
@@ -218,7 +220,7 @@ function BloxHub:SetupInputHandling()
         -- Handle registered hotkeys
         for _, window in pairs(self.State.Windows) do
             if window.Hotkeys then
-                for _, hotkey in pairs(window.Hotkeys) do
+                for name, hotkey in pairs(window.Hotkeys) do
                     if hotkey.Enabled and 
                        ((hotkey.KeyCode and input.KeyCode == hotkey.KeyCode) or
                         (hotkey.InputType and input.UserInputType == hotkey.InputType)) then
@@ -263,10 +265,20 @@ function BloxHub:CreateWindow(title, config)
     mainFrame.BorderSizePixel = 0
     mainFrame.Active = true
     mainFrame.Visible = window.Visible
-    mainFrame.ClipsDescendants = true
+    -- Set ClipsDescendants to false so dropdowns can appear outside the window bounds
+    mainFrame.ClipsDescendants = false
     mainFrame.Parent = self.Core.ScreenGui
     
     CreateUICorner(self.Settings.CornerRadius.Large, mainFrame)
+    
+    -- Create a separate frame for content that SHOULD be clipped
+    local contentClipper = Instance.new("Frame")
+    contentClipper.Name = "ContentClipper"
+    contentClipper.Size = UDim2.new(1, 0, 1, -45) -- Full size minus header
+    contentClipper.Position = UDim2.new(0, 0, 0, 45)
+    contentClipper.BackgroundTransparency = 1
+    contentClipper.ClipsDescendants = true
+    contentClipper.Parent = mainFrame
     
     -- Shadow effect
     local shadow = Instance.new("ImageLabel")
@@ -333,9 +345,9 @@ function BloxHub:CreateWindow(title, config)
     local tabContainer = Instance.new("Frame")
     tabContainer.Name = "TabContainer"
     tabContainer.Size = UDim2.new(1, -20, 0, 35)
-    tabContainer.Position = UDim2.new(0, 10, 0, 55)
+    tabContainer.Position = UDim2.new(0, 10, 0, 10) -- Positioned inside the clipper
     tabContainer.BackgroundTransparency = 1
-    tabContainer.Parent = mainFrame
+    tabContainer.Parent = contentClipper
     
     local tabLayout = Instance.new("UIListLayout")
     tabLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -346,10 +358,10 @@ function BloxHub:CreateWindow(title, config)
     -- Content container
     local contentContainer = Instance.new("Frame")
     contentContainer.Name = "ContentContainer"
-    contentContainer.Size = UDim2.new(1, -20, 1, -110)
-    contentContainer.Position = UDim2.new(0, 10, 0, 100)
+    contentContainer.Size = UDim2.new(1, -20, 1, -65) -- Adjusted size
+    contentContainer.Position = UDim2.new(0, 10, 0, 55) -- Positioned inside the clipper
     contentContainer.BackgroundTransparency = 1
-    contentContainer.Parent = mainFrame
+    contentContainer.Parent = contentClipper
     
     MakeDraggable(mainFrame, header)
     
@@ -387,9 +399,10 @@ function BloxHub:CreateWindow(title, config)
         return BloxHub.Elements:CreatePopup(self, title, options)
     end
     
-    function window:RegisterHotkey(name, keyCode, callback)
+    function window:RegisterHotkey(name, keyCode, callback, inputType)
         self.Hotkeys[name] = {
             KeyCode = keyCode,
+            InputType = inputType,
             Callback = callback,
             Enabled = true
         }
@@ -532,7 +545,7 @@ function BloxHub.Elements:CreateButton(tab, text, callback)
     
     button.MouseButton1Click:Connect(function()
         if callback then
-            callback()
+            pcall(callback)
         end
     end)
     
@@ -589,7 +602,7 @@ function BloxHub.Elements:CreateToggle(tab, text, default, callback)
     
     CreateUICorner(999, knob)
     
-    local function setToggleState(state)
+    local function setToggleState(state, runCallback)
         toggleState = state
         
         Tween(switch, {
@@ -600,13 +613,13 @@ function BloxHub.Elements:CreateToggle(tab, text, default, callback)
             Position = toggleState and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
         }, 0.2)
         
-        if callback then
+        if runCallback and callback then
             pcall(callback, toggleState)
         end
     end
     
     switch.MouseButton1Click:Connect(function()
-        setToggleState(not toggleState)
+        setToggleState(not toggleState, true)
     end)
     
     container.MouseEnter:Connect(function()
@@ -621,7 +634,7 @@ function BloxHub.Elements:CreateToggle(tab, text, default, callback)
         Container = container,
         GetValue = function() return toggleState end,
         SetValue = function(_, value)
-            setToggleState(value)
+            setToggleState(value, false) -- Don't run callback on external set
         end
     }
 end
@@ -686,16 +699,19 @@ function BloxHub.Elements:CreateSlider(tab, text, min, max, default, callback)
     local dragging = false
     
     local function updateSlider(x)
+        if not sliderBack or not sliderBack.Parent then return end
         local relativeX = math.clamp((x - sliderBack.AbsolutePosition.X) / sliderBack.AbsoluteSize.X, 0, 1)
-        sliderValue = min + (max - min) * relativeX
-        -- Snap to integers
-        sliderValue = math.floor(sliderValue + 0.5)
+        local newValue = min + (max - min) * relativeX
+        newValue = math.floor(newValue + 0.5) -- Snap to integers
 
-        valueLabel.Text = tostring(sliderValue)
-        Tween(sliderFill, {Size = UDim2.new(relativeX, 0, 1, 0)}, 0.05)
-        
-        if callback then
-            pcall(callback, sliderValue)
+        if newValue ~= sliderValue then
+            sliderValue = newValue
+            valueLabel.Text = tostring(sliderValue)
+            sliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
+            
+            if callback then
+                pcall(callback, sliderValue)
+            end
         end
     end
 
@@ -766,7 +782,7 @@ function BloxHub.Elements:CreateKeybind(tab, text, defaultKey, callback)
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, keyButton)
     
     keyButton.MouseButton1Click:Connect(function()
-        if BloxHub.State.ActiveHotkeyListener then return end -- Prevent multiple listeners
+        if BloxHub.State.ActiveHotkeyListener then return end
         keyButton.Text = "..."
         BloxHub.State.ActiveHotkeyListener = {
             Button = keyButton,
@@ -957,7 +973,6 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         expanded = not expanded
         
         if expanded then
-            -- === START OF FIX ===
             -- Get the absolute position of the main window and the button
             local windowFrame = tab.Window.Frame
             local windowPos = windowFrame.AbsolutePosition
@@ -965,14 +980,12 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             local btnSize = dropdownBtn.AbsoluteSize
 
             -- Calculate the position of the options container RELATIVE to the window frame
-            -- Formula: (Button's Absolute Position) - (Window's Absolute Position)
             local newX = btnPos.X - windowPos.X
             local newY = (btnPos.Y + btnSize.Y + 5) - windowPos.Y -- 5px padding below the button
             
             optionsContainer.Position = UDim2.fromOffset(newX, newY)
             -- The width should match the button's width
             optionsContainer.Size = UDim2.fromOffset(btnSize.X, optionsContainer.AbsoluteSize.Y)
-            -- === END OF FIX ===
 
             dropdownBtn.Text = selectedOption .. " ▲"
             optionsContainer.Visible = true
@@ -1116,7 +1129,7 @@ function BloxHub.Elements:CreatePopup(window, title, options)
     overlay.BackgroundTransparency = 0.5
     overlay.BorderSizePixel = 0
     overlay.Visible = false
-    overlay.ZIndex = 100
+    overlay.ZIndex = 1000
     overlay.Parent = BloxHub.Core.ScreenGui
     
     local popupFrame = Instance.new("Frame")
@@ -1125,7 +1138,7 @@ function BloxHub.Elements:CreatePopup(window, title, options)
     popupFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
     popupFrame.BackgroundColor3 = BloxHub.Settings.Theme.Background
     popupFrame.BorderSizePixel = 0
-    popupFrame.ZIndex = 101
+    popupFrame.ZIndex = 1001
     popupFrame.Parent = overlay
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Large, popupFrame)
@@ -1134,7 +1147,7 @@ function BloxHub.Elements:CreatePopup(window, title, options)
     header.Size = UDim2.new(1, 0, 0, 40)
     header.BackgroundColor3 = BloxHub.Settings.Theme.Primary
     header.BorderSizePixel = 0
-    header.ZIndex = 102
+    header.ZIndex = 1002
     header.Parent = popupFrame
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Large, header)
@@ -1148,7 +1161,7 @@ function BloxHub.Elements:CreatePopup(window, title, options)
     titleLabel.TextSize = 16
     titleLabel.Font = BloxHub.Settings.FontBold
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.ZIndex = 102
+    titleLabel.ZIndex = 1002
     titleLabel.Parent = header
     
     local closeBtn = Instance.new("TextButton")
@@ -1159,7 +1172,7 @@ function BloxHub.Elements:CreatePopup(window, title, options)
     closeBtn.TextColor3 = BloxHub.Settings.Theme.Text
     closeBtn.TextSize = 20
     closeBtn.Font = BloxHub.Settings.FontBold
-    closeBtn.ZIndex = 102
+    closeBtn.ZIndex = 1002
     closeBtn.Parent = header
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, closeBtn)
@@ -1175,7 +1188,7 @@ function BloxHub.Elements:CreatePopup(window, title, options)
     contentFrame.ScrollBarThickness = 4
     contentFrame.ScrollBarImageColor3 = BloxHub.Settings.Theme.Accent
     contentFrame.BorderSizePixel = 0
-    contentFrame.ZIndex = 102
+    contentFrame.ZIndex = 1002
     contentFrame.Parent = popupFrame
     
     local listLayout = Instance.new("UIListLayout")
@@ -1206,7 +1219,7 @@ function BloxHub.Elements:CreatePopup(window, title, options)
         btn.TextSize = 14
         btn.Font = BloxHub.Settings.FontSemibold
         btn.AutoButtonColor = false
-        btn.ZIndex = 102
+        btn.ZIndex = 1002
         btn.Parent = self.Content
         
         CreateUICorner(BloxHub.Settings.CornerRadius.Small, btn)
@@ -1238,49 +1251,13 @@ function BloxHub.Elements:CreatePopup(window, title, options)
         lbl.Font = BloxHub.Settings.Font
         lbl.TextXAlignment = Enum.TextXAlignment.Left
         lbl.TextWrapped = true
-        lbl.ZIndex = 102
+        lbl.ZIndex = 1002
         lbl.Parent = self.Content
         
         return lbl
     end
     
     return popup
-end
-
--- ═══════════════════════════════════════════════════════════
--- LAYOUT UTILITIES
--- ═══════════════════════════════════════════════════════════
-
-function BloxHub:CreateGrid(parent, columns, cellSize, padding)
-    local gridLayout = Instance.new("UIGridLayout")
-    gridLayout.CellSize = cellSize or UDim2.new(0, 140, 0, 100)
-    gridLayout.CellPadding = padding or UDim2.new(0, 10, 0, 10)
-    gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    gridLayout.StartCorner = Enum.StartCorner.TopLeft
-    gridLayout.FillDirection = Enum.FillDirection.Horizontal
-    gridLayout.Parent = parent
-    
-    return gridLayout
-end
-
-function BloxHub:CreateVerticalStack(parent, padding)
-    local listLayout = Instance.new("UIListLayout")
-    listLayout.Padding = UDim.new(0, padding or 8)
-    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    listLayout.FillDirection = Enum.FillDirection.Vertical
-    listLayout.Parent = parent
-    
-    return listLayout
-end
-
-function BloxHub:CreateHorizontalStack(parent, padding)
-    local listLayout = Instance.new("UIListLayout")
-    listLayout.FillDirection = Enum.FillDirection.Horizontal
-    listLayout.Padding = UDim.new(0, padding or 8)
-    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    listLayout.Parent = parent
-    
-    return listLayout
 end
 
 -- ═══════════════════════════════════════════════════════════
@@ -1338,14 +1315,8 @@ function BloxHub:SetTheme(themeName)
         if window.Frame then
             window.Frame.BackgroundColor3 = self.Settings.Theme.Background
             window.Header.BackgroundColor3 = self.Settings.Theme.Primary
-        end
-    end
-end
-
-function BloxHub:CustomizeTheme(customColors)
-    for key, value in pairs(customColors) do
-        if self.Settings.Theme[key] then
-            self.Settings.Theme[key] = value
+            -- A full theme update would require iterating through all elements,
+            -- this is a simplified version.
         end
     end
 end
@@ -1358,23 +1329,31 @@ function BloxHub:SaveConfig(configName)
     configName = configName or "default"
     
     local config = {
-        Theme = self.Settings.Theme,
+        Theme = {},
         Windows = {}
     }
+
+    -- Serialize Color3 values
+    for k, v in pairs(self.Settings.Theme) do
+        if typeof(v) == "Color3" then
+            config.Theme[k] = {r = v.R, g = v.G, b = v.B}
+        end
+    end
     
     for id, window in pairs(self.State.Windows) do
         config.Windows[id] = {
             Title = window.Title,
-            Position = window.Frame.Position,
-            Size = window.Frame.Size,
-            Visible = window.Visible,
-            Hotkeys = window.Hotkeys
+            Position = {
+                XScale = window.Frame.Position.X.Scale,
+                XOffset = window.Frame.Position.X.Offset,
+                YScale = window.Frame.Position.Y.Scale,
+                YOffset = window.Frame.Position.Y.Offset,
+            },
+            Visible = window.Visible
         }
     end
     
-    local success, encoded = pcall(function()
-        return HttpService:JSONEncode(config)
-    end)
+    local success, encoded = pcall(HttpService.JSONEncode, HttpService, config)
     
     if success then
         if writefile then
@@ -1389,29 +1368,42 @@ end
 function BloxHub:LoadConfig(configName)
     configName = configName or "default"
     
-    local config = nil
-    
+    local configData
     if readfile and isfile and isfile("BloxHub_" .. configName .. ".json") then
-        local success, result = pcall(function()
-            return HttpService:JSONDecode(readfile("BloxHub_" .. configName .. ".json"))
-        end)
-        
+        local success, result = pcall(readfile, "BloxHub_" .. configName .. ".json")
         if success then
-            config = result
+            local decodeSuccess, decoded = pcall(HttpService.JSONDecode, HttpService, result)
+            if decodeSuccess then
+                configData = decoded
+            end
         end
     end
     
-    if not config and self.State.SavedConfigs[configName] then
-        config = self.State.SavedConfigs[configName]
+    if not configData and self.State.SavedConfigs[configName] then
+        configData = self.State.SavedConfigs[configName]
     end
     
-    if config and config.Theme then
-        for key, value in pairs(config.Theme) do
-            self.Settings.Theme[key] = Color3.new(value.r, value.g, value.b)
+    if configData then
+        if configData.Theme then
+            for k, v in pairs(configData.Theme) do
+                self.Settings.Theme[k] = Color3.new(v.r, v.g, v.b)
+            end
+        end
+        if configData.Windows then
+            for id, winData in pairs(configData.Windows) do
+                if self.State.Windows[id] then
+                    local window = self.State.Windows[id]
+                    window.Frame.Position = UDim2.new(
+                        winData.Position.XScale, winData.Position.XOffset,
+                        winData.Position.YScale, winData.Position.YOffset
+                    )
+                    if window.Visible ~= winData.Visible then
+                        window:Toggle()
+                    end
+                end
+            end
         end
     end
-    
-    return config
 end
 
 -- ═══════════════════════════════════════════════════════════
@@ -1424,7 +1416,7 @@ function BloxHub:CreateFloatingIcon(window, config)
     local icon = Instance.new("TextButton")
     icon.Name = "FloatingIcon"
     icon.Size = config.Size or UDim2.new(0, 100, 0, 40)
-    icon.Position = config.Position or UDim2.new(0.5, -50, 0.05, 0)
+    icon.Position = config.Position or UDim2.new(0, 20, 0, 20)
     icon.BackgroundColor3 = self.Settings.Theme.Accent
     icon.Text = config.Text or "🧩 " .. window.Title
     icon.TextColor3 = self.Settings.Theme.Text
@@ -1452,7 +1444,6 @@ function BloxHub:CreateFloatingIcon(window, config)
     
     window.FloatingIcon = icon
     
-    -- Add minimize functionality to window
     local originalToggle = window.Toggle
     window.Toggle = function(self)
         originalToggle(self)
@@ -1482,10 +1473,10 @@ function BloxHub:Notify(title, message, duration, notifType)
     local notification = Instance.new("Frame")
     notification.Name = "Notification"
     notification.Size = UDim2.new(0, 300, 0, 80)
-    notification.Position = UDim2.new(1, 10, 0.9, 0) -- Start off-screen
+    notification.Position = UDim2.new(1, 10, 0.9, 0)
     notification.BackgroundColor3 = self.Settings.Theme.Primary
     notification.BorderSizePixel = 0
-    notification.ZIndex = 300
+    notification.ZIndex = 3000
     notification.Parent = self.Core.ScreenGui
     
     CreateUICorner(self.Settings.CornerRadius.Medium, notification)
@@ -1520,10 +1511,8 @@ function BloxHub:Notify(title, message, duration, notifType)
     messageLabel.TextWrapped = true
     messageLabel.Parent = notification
     
-    -- Slide in animation
     Tween(notification, {Position = UDim2.new(1, -310, 0.9, 0)}, 0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
     
-    -- Auto remove after duration
     task.delay(duration, function()
         if not notification or not notification.Parent then return end
         Tween(notification, {Position = UDim2.new(1, 10, 0.9, 0)}, 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
@@ -1536,16 +1525,17 @@ function BloxHub:Notify(title, message, duration, notifType)
     return notification
 end
 
-
-
 -- ═══════════════════════════════════════════════════════════
 -- CLEANUP
 -- ═══════════════════════════════════════════════════════════
 
 function BloxHub:Destroy()
+    if not self.Core.Initialized then return end
+    
     for _, connection in pairs(self.Input.Connections) do
         connection:Disconnect()
     end
+    self.Input.Connections = {}
     
     if self.Core.ScreenGui then
         self.Core.ScreenGui:Destroy()
@@ -1564,19 +1554,18 @@ end
 -- INITIALIZATION & RETURN
 -- ═══════════════════════════════════════════════════════════
 
--- Auto-initialize
-BloxHub:Init()
+-- Auto-initialize if not already done
+if not BloxHub.Core.Initialized then
+    BloxHub:Init()
 
--- Show welcome notification
-BloxHub:Notify(
-    "BloxHub Framework Loaded",
-    "Press RightShift to toggle GUI | Version " .. BloxHub.Version,
-    4,
-    "Success"
-)
+    BloxHub:Notify(
+        "BloxHub Framework Loaded",
+        "Press RightShift to toggle GUI | Version " .. BloxHub.Version,
+        4,
+        "Success"
+    )
 
--- Create example GUI (comment this out in production)
-BloxHub:CreateExampleGUI()
+    BloxHub:CreateExampleGUI()
+end
 
--- Return framework for external use
 return BloxHub
