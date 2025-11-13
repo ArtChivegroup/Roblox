@@ -790,18 +790,23 @@ function BloxHub.Elements:CreateKeybind(tab, text, defaultKey, callback)
 end
 
 function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
+    options = options or {}
     local selectedOption = options[1] or "None"
     local expanded = false
-    
+
+    local itemHeight = 28
+    local itemPadding = 2
+    local maxVisibleOptions = 6 -- <= ubah ini kalau mau batas terlihat berbeda
+
     local container = Instance.new("Frame")
     container.Name = "Dropdown_" .. text
     container.Size = UDim2.new(1, 0, 0, 35)
     container.BackgroundColor3 = BloxHub.Settings.Theme.Primary
     container.BorderSizePixel = 0
     container.Parent = tab.Container
-    
+
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, container)
-    
+
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.5, 0, 1, 0)
     label.Position = UDim2.new(0, 12, 0, 0)
@@ -812,7 +817,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     label.Font = BloxHub.Settings.Font
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = container
-    
+
     local dropdownBtn = Instance.new("TextButton")
     dropdownBtn.Size = UDim2.new(0.5, -12, 0, 28)
     dropdownBtn.Position = UDim2.new(0.5, 0, 0.5, -14)
@@ -823,27 +828,36 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     dropdownBtn.Font = BloxHub.Settings.FontSemibold
     dropdownBtn.AutoButtonColor = false
     dropdownBtn.Parent = container
-    
+
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, dropdownBtn)
-    
-    local optionsFrame = Instance.new("Frame")
-    optionsFrame.Size = UDim2.new(0.5, -12, 0, #options * 30)
+
+    -- Use ScrollingFrame to contain many options without growing infinitely
+    local visibleCount = math.min(#options, maxVisibleOptions)
+    local optionsHeight = (visibleCount * itemHeight) + math.max(0, (visibleCount - 1) * itemPadding)
+
+    local optionsFrame = Instance.new("ScrollingFrame")
+    optionsFrame.Size = UDim2.new(0.5, -12, 0, optionsHeight)
     optionsFrame.Position = UDim2.new(0.5, 0, 1, 5)
     optionsFrame.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
     optionsFrame.BorderSizePixel = 0
     optionsFrame.Visible = false
     optionsFrame.ZIndex = 10
+    optionsFrame.CanvasSize = UDim2.new(0, 0, 0, (#options * (itemHeight + itemPadding)))
+    optionsFrame.ScrollBarThickness = 6
+    optionsFrame.ScrollBarImageColor3 = BloxHub.Settings.Theme.Accent
     optionsFrame.Parent = container
-    
+
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsFrame)
-    
+
     local optionsLayout = Instance.new("UIListLayout")
-    optionsLayout.Padding = UDim.new(0, 2)
+    optionsLayout.Padding = UDim.new(0, itemPadding)
+    optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     optionsLayout.Parent = optionsFrame
-    
+
+    -- populate options
     for _, option in ipairs(options) do
         local optionBtn = Instance.new("TextButton")
-        optionBtn.Size = UDim2.new(1, -4, 0, 28)
+        optionBtn.Size = UDim2.new(1, -4, 0, itemHeight)
         optionBtn.Position = UDim2.new(0, 2, 0, 0)
         optionBtn.BackgroundColor3 = BloxHub.Settings.Theme.Primary
         optionBtn.Text = option
@@ -852,40 +866,46 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         optionBtn.Font = BloxHub.Settings.Font
         optionBtn.AutoButtonColor = false
         optionBtn.Parent = optionsFrame
-        
+
         CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionBtn)
-        
+
         optionBtn.MouseButton1Click:Connect(function()
             selectedOption = option
             dropdownBtn.Text = option .. " ▼"
             expanded = false
             optionsFrame.Visible = false
-            
+
+            -- restore container size to default 35 height
+            Tween(container, {Size = UDim2.new(1, 0, 0, 35)}, 0.15)
+
             if callback then
                 callback(option)
             end
         end)
-        
+
         optionBtn.MouseEnter:Connect(function()
-            Tween(optionBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.15)
+            Tween(optionBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.12)
         end)
-        
+
         optionBtn.MouseLeave:Connect(function()
-            Tween(optionBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.15)
+            Tween(optionBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.12)
         end)
     end
-    
+
     dropdownBtn.MouseButton1Click:Connect(function()
         expanded = not expanded
         optionsFrame.Visible = expanded
-        
+
         if expanded then
-            Tween(container, {Size = UDim2.new(1, 0, 0, 35 + optionsFrame.Size.Y.Offset + 5)}, 0.2)
+            -- calculate full height we want to animate to (but limit visible height)
+            local fullHeight = (#options * (itemHeight + itemPadding)) - itemPadding -- total content height
+            local targetHeight = math.min(fullHeight, optionsHeight)
+            Tween(container, {Size = UDim2.new(1, 0, 0, 35 + targetHeight + 5)}, 0.18)
         else
-            Tween(container, {Size = UDim2.new(1, 0, 0, 35)}, 0.2)
+            Tween(container, {Size = UDim2.new(1, 0, 0, 35)}, 0.15)
         end
     end)
-    
+
     return {
         Container = container,
         GetValue = function() return selectedOption end,
@@ -897,6 +917,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         end
     }
 end
+
 
 function BloxHub.Elements:CreateTextBox(tab, text, placeholder, callback)
     local container = Instance.new("Frame")
