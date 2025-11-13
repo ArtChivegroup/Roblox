@@ -790,23 +790,18 @@ function BloxHub.Elements:CreateKeybind(tab, text, defaultKey, callback)
 end
 
 function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
-    options = options or {}
     local selectedOption = options[1] or "None"
     local expanded = false
-
-    local itemHeight = 28
-    local itemPadding = 2
-    local maxVisibleOptions = 6 -- <= ubah ini kalau mau batas terlihat berbeda
-
+    
     local container = Instance.new("Frame")
     container.Name = "Dropdown_" .. text
     container.Size = UDim2.new(1, 0, 0, 35)
     container.BackgroundColor3 = BloxHub.Settings.Theme.Primary
     container.BorderSizePixel = 0
     container.Parent = tab.Container
-
+    
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, container)
-
+    
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.5, 0, 1, 0)
     label.Position = UDim2.new(0, 12, 0, 0)
@@ -817,7 +812,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     label.Font = BloxHub.Settings.Font
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = container
-
+    
     local dropdownBtn = Instance.new("TextButton")
     dropdownBtn.Size = UDim2.new(0.5, -12, 0, 28)
     dropdownBtn.Position = UDim2.new(0.5, 0, 0.5, -14)
@@ -828,42 +823,28 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     dropdownBtn.Font = BloxHub.Settings.FontSemibold
     dropdownBtn.AutoButtonColor = false
     dropdownBtn.Parent = container
-
+    
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, dropdownBtn)
     
-    -- Configuration for dropdown options display
-    local maxVisibleOptions = 5
-    local itemHeight = 28
-    local itemPadding = 2
-    
-    -- Calculate visible height (limited to maxVisibleOptions)
-    local visibleCount = math.min(#options, maxVisibleOptions)
-    local optionsHeight = (visibleCount * itemHeight) + math.max(0, (visibleCount - 1) * itemPadding)
-    
-    -- Create ScrollingFrame for dropdown options
-    local optionsFrame = Instance.new("ScrollingFrame")
-    optionsFrame.Size = UDim2.new(0.5, -12, 0, optionsHeight)
+    local optionsFrame = Instance.new("Frame")
+    optionsFrame.Size = UDim2.new(0.5, -12, 0, #options * 30)
     optionsFrame.Position = UDim2.new(0.5, 0, 1, 5)
     optionsFrame.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
     optionsFrame.BorderSizePixel = 0
     optionsFrame.Visible = false
     optionsFrame.ZIndex = 10
-    optionsFrame.CanvasSize = UDim2.new(0, 0, 0, (#options * itemHeight) + ((#options - 1) * itemPadding))
-    optionsFrame.ScrollBarThickness = 4
-    optionsFrame.ScrollBarImageColor3 = BloxHub.Settings.Theme.Accent
     optionsFrame.Parent = container
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsFrame)
     
     local optionsLayout = Instance.new("UIListLayout")
-    optionsLayout.Padding = UDim.new(0, itemPadding)
-    optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    optionsLayout.Padding = UDim.new(0, 2)
     optionsLayout.Parent = optionsFrame
     
-    -- Populate dropdown options
     for _, option in ipairs(options) do
         local optionBtn = Instance.new("TextButton")
-        optionBtn.Size = UDim2.new(1, -8, 0, itemHeight)
+        optionBtn.Size = UDim2.new(1, -4, 0, 28)
+        optionBtn.Position = UDim2.new(0, 2, 0, 0)
         optionBtn.BackgroundColor3 = BloxHub.Settings.Theme.Primary
         optionBtn.Text = option
         optionBtn.TextColor3 = BloxHub.Settings.Theme.Text
@@ -894,10 +875,15 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         end)
     end
     
-    -- Toggle dropdown visibility
     dropdownBtn.MouseButton1Click:Connect(function()
         expanded = not expanded
         optionsFrame.Visible = expanded
+        
+        if expanded then
+            Tween(container, {Size = UDim2.new(1, 0, 0, 35 + optionsFrame.Size.Y.Offset + 5)}, 0.2)
+        else
+            Tween(container, {Size = UDim2.new(1, 0, 0, 35)}, 0.2)
+        end
     end)
     
     return {
@@ -911,7 +897,6 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         end
     }
 end
-
 
 function BloxHub.Elements:CreateTextBox(tab, text, placeholder, callback)
     local container = Instance.new("Frame")
@@ -1069,23 +1054,20 @@ function BloxHub.Elements:CreatePopup(window, title, options)
         popup:Hide()
     end)
     
-    local optionsFrame = Instance.new("ScrollingFrame")
-    optionsFrame.Size = UDim2.new(0.5, -12, 0, math.min(#options * 30, 150))
-    optionsFrame.Position = UDim2.new(0.5, 0, 1, 5)
-    optionsFrame.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
-    optionsFrame.BorderSizePixel = 0
-    optionsFrame.Visible = false
-    optionsFrame.ZIndex = 10
-    optionsFrame.ScrollBarThickness = 4
-    optionsFrame.ScrollBarImageColor3 = BloxHub.Settings.Theme.Accent
-    optionsFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
-    optionsFrame.Parent = container
+    local contentFrame = Instance.new("ScrollingFrame")
+    contentFrame.Size = UDim2.new(1, -20, 1, -60)
+    contentFrame.Position = UDim2.new(0, 10, 0, 50)
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.ScrollBarThickness = 4
+    contentFrame.ScrollBarImageColor3 = BloxHub.Settings.Theme.Accent
+    contentFrame.BorderSizePixel = 0
+    contentFrame.ZIndex = 102
+    contentFrame.Parent = popupFrame
     
-    CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsFrame)
-    
-    local optionsLayout = Instance.new("UIListLayout")
-    optionsLayout.Padding = UDim.new(0, 2)
-    optionsLayout.Parent = optionsFrame
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding = UDim.new(0, 8)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Parent = contentFrame
     
     popup.Overlay = overlay
     popup.Frame = popupFrame
