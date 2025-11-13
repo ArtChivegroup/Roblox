@@ -116,14 +116,12 @@ local function MakeDraggable(frame, dragHandle)
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - mousePos
-            Tween(frame, {
-                Position = UDim2.new(
-                    framePos.X.Scale,
-                    framePos.X.Offset + delta.X,
-                    framePos.Y.Scale,
-                    framePos.Y.Offset + delta.Y
-                )
-            }, 0.1)
+            frame.Position = UDim2.new(
+                framePos.X.Scale,
+                framePos.X.Offset + delta.X,
+                framePos.Y.Scale,
+                framePos.Y.Offset + delta.Y
+            )
         end
     end)
 end
@@ -265,6 +263,7 @@ function BloxHub:CreateWindow(title, config)
     mainFrame.BorderSizePixel = 0
     mainFrame.Active = true
     mainFrame.Visible = window.Visible
+    mainFrame.ClipsDescendants = true
     mainFrame.Parent = self.Core.ScreenGui
     
     CreateUICorner(self.Settings.CornerRadius.Large, mainFrame)
@@ -590,8 +589,8 @@ function BloxHub.Elements:CreateToggle(tab, text, default, callback)
     
     CreateUICorner(999, knob)
     
-    switch.MouseButton1Click:Connect(function()
-        toggleState = not toggleState
+    local function setToggleState(state)
+        toggleState = state
         
         Tween(switch, {
             BackgroundColor3 = toggleState and BloxHub.Settings.Theme.Accent or BloxHub.Settings.Theme.Secondary
@@ -602,8 +601,12 @@ function BloxHub.Elements:CreateToggle(tab, text, default, callback)
         }, 0.2)
         
         if callback then
-            callback(toggleState)
+            pcall(callback, toggleState)
         end
+    end
+    
+    switch.MouseButton1Click:Connect(function()
+        setToggleState(not toggleState)
     end)
     
     container.MouseEnter:Connect(function()
@@ -618,9 +621,7 @@ function BloxHub.Elements:CreateToggle(tab, text, default, callback)
         Container = container,
         GetValue = function() return toggleState end,
         SetValue = function(_, value)
-            toggleState = value
-            switch.BackgroundColor3 = toggleState and BloxHub.Settings.Theme.Accent or BloxHub.Settings.Theme.Secondary
-            knob.Position = toggleState and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+            setToggleState(value)
         end
     }
 end
@@ -684,8 +685,23 @@ function BloxHub.Elements:CreateSlider(tab, text, min, max, default, callback)
     
     local dragging = false
     
+    local function updateSlider(x)
+        local relativeX = math.clamp((x - sliderBack.AbsolutePosition.X) / sliderBack.AbsoluteSize.X, 0, 1)
+        sliderValue = min + (max - min) * relativeX
+        -- Snap to integers
+        sliderValue = math.floor(sliderValue + 0.5)
+
+        valueLabel.Text = tostring(sliderValue)
+        Tween(sliderFill, {Size = UDim2.new(relativeX, 0, 1, 0)}, 0.05)
+        
+        if callback then
+            pcall(callback, sliderValue)
+        end
+    end
+
     sliderButton.MouseButton1Down:Connect(function()
         dragging = true
+        updateSlider(Mouse.X)
     end)
     
     UserInputService.InputEnded:Connect(function(input)
@@ -694,17 +710,9 @@ function BloxHub.Elements:CreateSlider(tab, text, min, max, default, callback)
         end
     end)
     
-    sliderButton.MouseMoved:Connect(function(x)
+    Mouse.Move:Connect(function()
         if dragging then
-            local relativeX = math.clamp((x - sliderBack.AbsolutePosition.X) / sliderBack.AbsoluteSize.X, 0, 1)
-            sliderValue = math.floor(min + (max - min) * relativeX)
-            
-            valueLabel.Text = tostring(sliderValue)
-            Tween(sliderFill, {Size = UDim2.new(relativeX, 0, 1, 0)}, 0.1)
-            
-            if callback then
-                callback(sliderValue)
-            end
+            updateSlider(Mouse.X)
         end
     end)
     
@@ -714,7 +722,8 @@ function BloxHub.Elements:CreateSlider(tab, text, min, max, default, callback)
         SetValue = function(_, value)
             sliderValue = math.clamp(value, min, max)
             valueLabel.Text = tostring(sliderValue)
-            sliderFill.Size = UDim2.new((sliderValue - min) / (max - min), 0, 1, 0)
+            local relativeX = (sliderValue - min) / (max - min)
+            sliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
         end
     }
 end
@@ -757,6 +766,7 @@ function BloxHub.Elements:CreateKeybind(tab, text, defaultKey, callback)
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, keyButton)
     
     keyButton.MouseButton1Click:Connect(function()
+        if BloxHub.State.ActiveHotkeyListener then return end -- Prevent multiple listeners
         keyButton.Text = "..."
         BloxHub.State.ActiveHotkeyListener = {
             Button = keyButton,
@@ -764,7 +774,7 @@ function BloxHub.Elements:CreateKeybind(tab, text, defaultKey, callback)
                 currentKey = keyCode
                 currentInputType = inputType
                 if callback then
-                    callback(keyCode, inputType, keyName)
+                    pcall(callback, keyCode, inputType, keyName)
                 end
             end
         }
@@ -793,7 +803,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     local selectedOption = options[1] or "None"
     local expanded = false
     
-    -- 主容器
+    -- Main component container
     local container = Instance.new("Frame")
     container.Name = "Dropdown_" .. text
     container.Size = UDim2.new(1, 0, 0, 35)
@@ -803,7 +813,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, container)
     
-    -- 标签
+    -- Label
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.5, 0, 1, 0)
     label.Position = UDim2.new(0, 12, 0, 0)
@@ -815,8 +825,9 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = container
     
-    -- 下拉按钮
+    -- Dropdown button
     local dropdownBtn = Instance.new("TextButton")
+    dropdownBtn.Name = "DropdownButton"
     dropdownBtn.Size = UDim2.new(0.5, -12, 0, 28)
     dropdownBtn.Position = UDim2.new(0.5, 0, 0.5, -14)
     dropdownBtn.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
@@ -829,66 +840,69 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, dropdownBtn)
     
-    -- 选项容器（初始隐藏）
+    -- Options container (initially hidden)
     local optionsContainer = Instance.new("Frame")
     optionsContainer.Name = "DropdownOptions"
-    optionsContainer.Size = UDim2.new(0.5, -12, 0, 0)
-    optionsContainer.Position = UDim2.new(0.5, 0, 1, 5)
+    optionsContainer.Size = UDim2.new(0, 0, 0, 0) -- Will be resized dynamically
     optionsContainer.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
     optionsContainer.BorderSizePixel = 0
     optionsContainer.Visible = false
-    optionsContainer.ZIndex = 100
-    optionsContainer.Parent = container
+    optionsContainer.ClipsDescendants = true
+    optionsContainer.ZIndex = 500 -- High ZIndex to be on top
+    optionsContainer.Parent = tab.Window.Frame -- **FIX**: Parent to window frame
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsContainer)
     
-    -- 选项列表布局
+    -- Options list layout
     local optionsLayout = Instance.new("UIListLayout")
     optionsLayout.Padding = UDim.new(0, 2)
     optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     optionsLayout.Parent = optionsContainer
     
-    -- 存储选项对象
+    CreateUIPadding(4, 4, 4, 4, optionsContainer)
+
+    -- Stored option objects
     local optionObjects = {}
     
-    -- 创建选项函数
+    -- Function to create options
     local function createOptions()
-        -- 清除旧选项
+        -- Clear old options
         for _, obj in pairs(optionObjects) do
             obj:Destroy()
         end
         optionObjects = {}
         
-        local totalHeight = 4 -- 初始边距
+        local totalHeight = 8 -- Initial top/bottom padding
         
         for i, option in ipairs(options) do
-            -- 选项背景
+            -- Option button
             local optionBg = Instance.new("TextButton")
             optionBg.Name = "Option_" .. i
-            optionBg.Size = UDim2.new(1, -8, 0, 22)
+            optionBg.Size = UDim2.new(1, 0, 0, 22)
             optionBg.BackgroundColor3 = BloxHub.Settings.Theme.Primary
             optionBg.Text = ""
             optionBg.AutoButtonColor = false
             optionBg.LayoutOrder = i
-            optionBg.ZIndex = 101
+            optionBg.ZIndex = 501
             optionBg.Parent = optionsContainer
             
             CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionBg)
             
-            -- 选项文本
+            -- Option text
             local optionText = Instance.new("TextLabel")
-            optionText.Size = UDim2.new(1, -10, 1, 0)
-            optionText.Position = UDim2.new(0, 5, 0, 0)
+            optionText.Name = "OptionText" -- **FIX**: Named for easy reference
+            optionText.Size = UDim2.new(1, -15, 1, 0)
+            optionText.Position = UDim2.new(0, 10, 0, 0)
             optionText.BackgroundTransparency = 1
             optionText.Text = option
             optionText.TextColor3 = BloxHub.Settings.Theme.Text
             optionText.TextSize = 12
             optionText.Font = BloxHub.Settings.Font
             optionText.TextXAlignment = Enum.TextXAlignment.Left
-            optionText.ZIndex = 102
+            optionText.ZIndex = 502
             optionText.Parent = optionBg
             
-            -- 选中状态指示器
+            -- Selected state indicator
             local selectedIndicator = Instance.new("Frame")
             selectedIndicator.Name = "SelectedIndicator"
             selectedIndicator.Size = UDim2.new(0, 3, 1, 0)
@@ -896,26 +910,27 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             selectedIndicator.BackgroundColor3 = BloxHub.Settings.Theme.Accent
             selectedIndicator.BorderSizePixel = 0
             selectedIndicator.Visible = (option == selectedOption)
-            selectedIndicator.ZIndex = 103
+            selectedIndicator.ZIndex = 503
             selectedIndicator.Parent = optionBg
             
-            -- 事件处理
+            -- Event handlers
             optionBg.MouseButton1Click:Connect(function()
                 selectedOption = option
                 dropdownBtn.Text = option .. " ▼"
                 expanded = false
                 optionsContainer.Visible = false
                 
-                -- 更新所有选项的选中状态
+                -- Update all option indicators
                 for _, obj in pairs(optionObjects) do
                     local indicator = obj:FindFirstChild("SelectedIndicator")
                     if indicator then
-                        indicator.Visible = (obj.TextLabel.Text == option)
+                        -- **FIX**: Correct reference to OptionText
+                        indicator.Visible = (obj.OptionText.Text == option)
                     end
                 end
                 
                 if callback then
-                    callback(option)
+                    pcall(callback, option)
                 end
             end)
             
@@ -928,25 +943,29 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             end)
             
             table.insert(optionObjects, optionBg)
-            totalHeight = totalHeight + 22 + 2 -- 选项高度 + 间距
+            totalHeight = totalHeight + 22 + 2 -- Option height + padding
         end
         
-        -- 更新选项容器大小
-        optionsContainer.Size = UDim2.new(0.5, -12, 0, totalHeight)
+        -- Update container size
+        optionsContainer.Size = UDim2.new(0, dropdownBtn.AbsoluteSize.X, 0, totalHeight)
     end
     
-    -- 初始化选项
+    -- Initialize options
     createOptions()
     
-    -- 下拉按钮点击事件
+    -- Dropdown button click event
     dropdownBtn.MouseButton1Click:Connect(function()
         expanded = not expanded
-        optionsContainer.Visible = expanded
         
         if expanded then
+            -- **FIX**: Recalculate position and size when opening
+            optionsContainer.Size = UDim2.new(0, dropdownBtn.AbsoluteSize.X, 0, optionsContainer.AbsoluteSize.Y)
+            optionsContainer.Position = UDim2.new(0, dropdownBtn.AbsolutePosition.X, 0, dropdownBtn.AbsolutePosition.Y + dropdownBtn.AbsoluteSize.Y + 5)
             dropdownBtn.Text = selectedOption .. " ▲"
+            optionsContainer.Visible = true
         else
             dropdownBtn.Text = selectedOption .. " ▼"
+            optionsContainer.Visible = false
         end
     end)
     
@@ -958,7 +977,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         Tween(dropdownBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Secondary}, 0.2)
     end)
     
-    -- 返回控制对象
+    -- Return control object
     return {
         Container = container,
         GetValue = function() return selectedOption end,
@@ -967,16 +986,18 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
                 selectedOption = value
                 dropdownBtn.Text = value .. " ▼"
                 
-                -- 更新选项选中状态
+                -- Update option indicators
                 for _, obj in pairs(optionObjects) do
                     local indicator = obj:FindFirstChild("SelectedIndicator")
                     if indicator then
-                        indicator.Visible = (obj.TextLabel.Text == value)
+                        -- **FIX**: Correct reference to OptionText
+                        indicator.Visible = (obj.OptionText.Text == value)
                     end
                 end
             end
         end,
-        Refresh = function()
+        Refresh = function(newOptions)
+            options = newOptions or options
             createOptions()
         end
     }
@@ -1021,7 +1042,7 @@ function BloxHub.Elements:CreateTextBox(tab, text, placeholder, callback)
     
     textBox.FocusLost:Connect(function(enterPressed)
         if callback then
-            callback(textBox.Text, enterPressed)
+            pcall(callback, textBox.Text, enterPressed)
         end
     end)
     
@@ -1040,7 +1061,7 @@ function BloxHub.Elements:CreateLabel(tab, text, config)
     local label = Instance.new("TextLabel")
     label.Name = "Label_" .. text
     label.Size = UDim2.new(1, 0, 0, config.Height or 25)
-    label.BackgroundTransparency = config.Background and 0 or 1
+    label.BackgroundTransparency = not config.Background and 1 or 0
     label.BackgroundColor3 = config.BackgroundColor or BloxHub.Settings.Theme.Primary
     label.Text = text
     label.TextColor3 = config.TextColor or BloxHub.Settings.Theme.Text
@@ -1050,11 +1071,8 @@ function BloxHub.Elements:CreateLabel(tab, text, config)
     label.TextWrapped = true
     label.Parent = tab.Container
     
-    if not config.Background then
-        CreateUICorner(BloxHub.Settings.CornerRadius.Small, label)
-    end
-    
     if config.Background then
+        CreateUICorner(BloxHub.Settings.CornerRadius.Small, label)
         CreateUIPadding(12, 12, 5, 5, label)
     end
     
@@ -1183,7 +1201,7 @@ function BloxHub.Elements:CreatePopup(window, title, options)
         
         btn.MouseButton1Click:Connect(function()
             if callback then
-                callback()
+                pcall(callback)
             end
         end)
         
@@ -1226,6 +1244,8 @@ function BloxHub:CreateGrid(parent, columns, cellSize, padding)
     gridLayout.CellSize = cellSize or UDim2.new(0, 140, 0, 100)
     gridLayout.CellPadding = padding or UDim2.new(0, 10, 0, 10)
     gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    gridLayout.StartCorner = Enum.StartCorner.TopLeft
+    gridLayout.FillDirection = Enum.FillDirection.Horizontal
     gridLayout.Parent = parent
     
     return gridLayout
@@ -1235,6 +1255,7 @@ function BloxHub:CreateVerticalStack(parent, padding)
     local listLayout = Instance.new("UIListLayout")
     listLayout.Padding = UDim.new(0, padding or 8)
     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.FillDirection = Enum.FillDirection.Vertical
     listLayout.Parent = parent
     
     return listLayout
@@ -1345,7 +1366,7 @@ function BloxHub:SaveConfig(configName)
     
     if success then
         if writefile then
-            writefile("BloxHub_" .. configName .. ".json", encoded)
+            pcall(writefile, "BloxHub_" .. configName .. ".json", encoded)
         end
         self.State.SavedConfigs[configName] = config
     end
@@ -1374,7 +1395,7 @@ function BloxHub:LoadConfig(configName)
     
     if config and config.Theme then
         for key, value in pairs(config.Theme) do
-            self.Settings.Theme[key] = value
+            self.Settings.Theme[key] = Color3.new(value.r, value.g, value.b)
         end
     end
     
@@ -1397,7 +1418,7 @@ function BloxHub:CreateFloatingIcon(window, config)
     icon.TextColor3 = self.Settings.Theme.Text
     icon.TextSize = 14
     icon.Font = self.Settings.FontBold
-    icon.Visible = false
+    icon.Visible = not window.Visible and config.ShowOnMinimize
     icon.ZIndex = 200
     icon.Parent = self.Core.ScreenGui
     
@@ -1405,7 +1426,6 @@ function BloxHub:CreateFloatingIcon(window, config)
     
     icon.MouseButton1Click:Connect(function()
         window:Toggle()
-        icon.Visible = not window.Visible
     end)
     
     icon.MouseEnter:Connect(function()
@@ -1450,7 +1470,7 @@ function BloxHub:Notify(title, message, duration, notifType)
     local notification = Instance.new("Frame")
     notification.Name = "Notification"
     notification.Size = UDim2.new(0, 300, 0, 80)
-    notification.Position = UDim2.new(1, -320, 1, 20)
+    notification.Position = UDim2.new(1, 10, 0.9, 0) -- Start off-screen
     notification.BackgroundColor3 = self.Settings.Theme.Primary
     notification.BorderSizePixel = 0
     notification.ZIndex = 300
@@ -1460,7 +1480,7 @@ function BloxHub:Notify(title, message, duration, notifType)
     
     local accent = Instance.new("Frame")
     accent.Size = UDim2.new(0, 4, 1, 0)
-    accent.BackgroundColor3 = notifColors[notifType]
+    accent.BackgroundColor3 = notifColors[notifType] or notifColors.Info
     accent.BorderSizePixel = 0
     accent.Parent = notification
     
@@ -1489,17 +1509,81 @@ function BloxHub:Notify(title, message, duration, notifType)
     messageLabel.Parent = notification
     
     -- Slide in animation
-    Tween(notification, {Position = UDim2.new(1, -320, 1, -100)}, 0.4, Enum.EasingStyle.Back)
+    Tween(notification, {Position = UDim2.new(1, -310, 0.9, 0)}, 0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
     
     -- Auto remove after duration
     task.delay(duration, function()
-        Tween(notification, {Position = UDim2.new(1, -320, 1, 20)}, 0.3)
+        if not notification or not notification.Parent then return end
+        Tween(notification, {Position = UDim2.new(1, 10, 0.9, 0)}, 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
         task.wait(0.3)
-        notification:Destroy()
+        if notification and notification.Parent then
+            notification:Destroy()
+        end
     end)
     
     return notification
 end
+
+-- ═══════════════════════════════════════════════════════════
+-- EXAMPLE GUI
+-- ═══════════════════════════════════════════════════════════
+
+function BloxHub:CreateExampleGUI()
+    local Main = self:CreateWindow("BloxHub Example")
+    
+    -- Register a hotkey to toggle the main window
+    Main:RegisterHotkey("ToggleGUI", Enum.KeyCode.RightShift, function()
+        Main:Toggle()
+    end)
+    
+    self:CreateFloatingIcon(Main, {Text = "Toggle GUI", ShowOnMinimize = true})
+
+    local featuresTab = Main:CreateTab("Features")
+    
+    featuresTab:AddButton("Test Button", function()
+        self:Notify("Button Clicked", "The test button was pressed.", 3, "Info")
+    end)
+    
+    featuresTab:AddToggle("Enable Feature", false, function(state)
+        self:Notify("Toggle Changed", "Feature is now " .. (state and "ON" or "OFF"), 2, "Success")
+    end)
+    
+    featuresTab:AddSlider("Field of View", 1, 120, 70, function(value)
+        print("Slider Value:", value)
+    end)
+    
+    featuresTab:AddKeybind("Aimbot Key", Enum.KeyCode.E, function(key, inputType, keyName)
+        self:Notify("Keybind Set", "Aimbot key set to " .. keyName, 3, "Info")
+    end)
+    
+    featuresTab:AddDropdown("Select Mode", {"Option 1", "Option 2", "Another Choice"}, function(choice)
+        self:Notify("Dropdown", "Selected: " .. choice, 2)
+    end)
+    
+    featuresTab:AddTextBox("Username", "Enter your name...", function(text, enterPressed)
+        if enterPressed then
+            self:Notify("Text Submitted", "Welcome, " .. text, 3, "Success")
+        end
+    end)
+    
+    featuresTab:AddDivider()
+    featuresTab:AddLabel("Section Title", {Bold = true, TextSize = 16})
+    featuresTab:AddLabel("This is an informational label about the section below. It can wrap text if needed.", {Height = 40})
+
+    local visualsTab = Main:CreateTab("Visuals")
+    visualsTab:AddToggle("ESP", true)
+    visualsTab:AddToggle("Chams", false)
+
+    local settingsTab = Main:CreateTab("Settings")
+    settingsTab:AddDropdown("Theme", {"Dark", "Light", "Purple", "Green"}, function(theme)
+        self:SetTheme(theme)
+    end)
+    settingsTab:AddButton("Save Config", function()
+        self:SaveConfig()
+        self:Notify("Success", "Configuration saved.", 2, "Success")
+    end)
+end
+
 
 -- ═══════════════════════════════════════════════════════════
 -- CLEANUP
@@ -1514,11 +1598,14 @@ function BloxHub:Destroy()
         self.Core.ScreenGui:Destroy()
     end
     
-    self.State.Windows = {}
+    self.State = {
+        Windows = {},
+        ActiveHotkeyListener = nil,
+        DraggingElement = nil,
+        SavedConfigs = {}
+    }
     self.Core.Initialized = false
 end
-
-
 
 -- ═══════════════════════════════════════════════════════════
 -- INITIALIZATION & RETURN
