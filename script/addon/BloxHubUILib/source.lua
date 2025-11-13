@@ -843,17 +843,17 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     -- Options container (initially hidden)
     local optionsContainer = Instance.new("Frame")
     optionsContainer.Name = "DropdownOptions"
-    optionsContainer.Size = UDim2.new(0, 0, 0, 0) -- Will be resized dynamically
     optionsContainer.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
     optionsContainer.BorderSizePixel = 0
     optionsContainer.Visible = false
     optionsContainer.ClipsDescendants = true
-    optionsContainer.ZIndex = 500 -- High ZIndex to be on top
-    optionsContainer.Parent = tab.Window.Frame -- **FIX**: Parent to window frame
+    optionsContainer.ZIndex = 5000 -- ZIndex sangat tinggi agar selalu di depan
+    
+    --- PERUBAIKAN KUNCI 1: Parent diatur ke ScreenGui utama ---
+    optionsContainer.Parent = BloxHub.Core.ScreenGui
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsContainer)
     
-    -- Options list layout
     local optionsLayout = Instance.new("UIListLayout")
     optionsLayout.Padding = UDim.new(0, 2)
     optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -861,21 +861,15 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     
     CreateUIPadding(4, 4, 4, 4, optionsContainer)
 
-    -- Stored option objects
     local optionObjects = {}
     
-    -- Function to create options
     local function createOptions()
-        -- Clear old options
-        for _, obj in pairs(optionObjects) do
-            obj:Destroy()
-        end
-        optionObjects = {}
+        for _, obj in pairs(optionObjects) do obj:Destroy() end
+        table.clear(optionObjects)
         
-        local totalHeight = 8 -- Initial top/bottom padding
+        local totalHeight = 8
         
         for i, option in ipairs(options) do
-            -- Option button
             local optionBg = Instance.new("TextButton")
             optionBg.Name = "Option_" .. i
             optionBg.Size = UDim2.new(1, 0, 0, 22)
@@ -883,14 +877,13 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             optionBg.Text = ""
             optionBg.AutoButtonColor = false
             optionBg.LayoutOrder = i
-            optionBg.ZIndex = 501
+            optionBg.ZIndex = 5001
             optionBg.Parent = optionsContainer
             
             CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionBg)
             
-            -- Option text
             local optionText = Instance.new("TextLabel")
-            optionText.Name = "OptionText" -- **FIX**: Named for easy reference
+            optionText.Name = "OptionText"
             optionText.Size = UDim2.new(1, -15, 1, 0)
             optionText.Position = UDim2.new(0, 10, 0, 0)
             optionText.BackgroundTransparency = 1
@@ -899,68 +892,58 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             optionText.TextSize = 12
             optionText.Font = BloxHub.Settings.Font
             optionText.TextXAlignment = Enum.TextXAlignment.Left
-            optionText.ZIndex = 502
+            optionText.ZIndex = 5002
             optionText.Parent = optionBg
             
-            -- Selected state indicator
             local selectedIndicator = Instance.new("Frame")
             selectedIndicator.Name = "SelectedIndicator"
             selectedIndicator.Size = UDim2.new(0, 3, 1, 0)
-            selectedIndicator.Position = UDim2.new(0, 0, 0, 0)
             selectedIndicator.BackgroundColor3 = BloxHub.Settings.Theme.Accent
             selectedIndicator.BorderSizePixel = 0
             selectedIndicator.Visible = (option == selectedOption)
-            selectedIndicator.ZIndex = 503
+            selectedIndicator.ZIndex = 5003
             selectedIndicator.Parent = optionBg
             
-            -- Event handlers
             optionBg.MouseButton1Click:Connect(function()
                 selectedOption = option
                 dropdownBtn.Text = option .. " ▼"
                 expanded = false
                 optionsContainer.Visible = false
                 
-                -- Update all option indicators
                 for _, obj in pairs(optionObjects) do
                     local indicator = obj:FindFirstChild("SelectedIndicator")
                     if indicator then
-                        -- **FIX**: Correct reference to OptionText
                         indicator.Visible = (obj.OptionText.Text == option)
                     end
                 end
                 
-                if callback then
-                    pcall(callback, option)
-                end
+                if callback then pcall(callback, option) end
             end)
             
-            optionBg.MouseEnter:Connect(function()
-                Tween(optionBg, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.15)
-            end)
-            
-            optionBg.MouseLeave:Connect(function()
-                Tween(optionBg, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.15)
-            end)
+            optionBg.MouseEnter:Connect(function() Tween(optionBg, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.15) end)
+            optionBg.MouseLeave:Connect(function() Tween(optionBg, {BackgroundColor3 = BloxHub.Settings.Theme.Primary}, 0.15) end)
             
             table.insert(optionObjects, optionBg)
-            totalHeight = totalHeight + 22 + 2 -- Option height + padding
+            totalHeight = totalHeight + 22 + 2
         end
         
-        -- Update container size
-        optionsContainer.Size = UDim2.new(0, dropdownBtn.AbsoluteSize.X, 0, totalHeight)
+        optionsContainer.Size = UDim2.fromOffset(dropdownBtn.AbsoluteSize.X, totalHeight)
     end
     
-    -- Initialize options
     createOptions()
     
-    -- Dropdown button click event
     dropdownBtn.MouseButton1Click:Connect(function()
         expanded = not expanded
         
         if expanded then
-            -- **FIX**: Recalculate position and size when opening
-            optionsContainer.Size = UDim2.new(0, dropdownBtn.AbsoluteSize.X, 0, optionsContainer.AbsoluteSize.Y)
-            optionsContainer.Position = UDim2.new(0, dropdownBtn.AbsolutePosition.X, 0, dropdownBtn.AbsolutePosition.Y + dropdownBtn.AbsoluteSize.Y + 5)
+            --- PERUBAIKAN KUNCI 2: Menggunakan posisi absolut secara langsung ---
+            local btnPos = dropdownBtn.AbsolutePosition
+            local btnSize = dropdownBtn.AbsoluteSize
+            
+            -- Atur ukuran dan posisi container berdasarkan posisi tombol di layar
+            optionsContainer.Size = UDim2.fromOffset(btnSize.X, optionsContainer.AbsoluteSize.Y)
+            optionsContainer.Position = UDim2.fromOffset(btnPos.X, btnPos.Y + btnSize.Y + 5)
+            
             dropdownBtn.Text = selectedOption .. " ▲"
             optionsContainer.Visible = true
         else
@@ -969,15 +952,22 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         end
     end)
     
-    dropdownBtn.MouseEnter:Connect(function()
-        Tween(dropdownBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2)
-    end)
+    dropdownBtn.MouseEnter:Connect(function() Tween(dropdownBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Accent}, 0.2) end)
+    dropdownBtn.MouseLeave:Connect(function() Tween(dropdownBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Secondary}, 0.2) end)
     
-    dropdownBtn.MouseLeave:Connect(function()
-        Tween(dropdownBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Secondary}, 0.2)
-    end)
+    local function closeDropdown()
+        expanded = false
+        optionsContainer.Visible = false
+        dropdownBtn.Text = selectedOption .. " ▼"
+    end
     
-    -- Return control object
+    -- Menutup dropdown jika tab diganti
+    tab.Window.Frame.Changed:Connect(function(prop)
+        if prop == "Visible" and not tab.Window.Frame.Visible then
+            closeDropdown()
+        end
+    end)
+
     return {
         Container = container,
         GetValue = function() return selectedOption end,
@@ -985,12 +975,9 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             if table.find(options, value) then
                 selectedOption = value
                 dropdownBtn.Text = value .. " ▼"
-                
-                -- Update option indicators
                 for _, obj in pairs(optionObjects) do
                     local indicator = obj:FindFirstChild("SelectedIndicator")
                     if indicator then
-                        -- **FIX**: Correct reference to OptionText
                         indicator.Visible = (obj.OptionText.Text == value)
                     end
                 end
@@ -1524,7 +1511,65 @@ function BloxHub:Notify(title, message, duration, notifType)
     return notification
 end
 
+-- ═══════════════════════════════════════════════════════════
+-- EXAMPLE GUI
+-- ═══════════════════════════════════════════════════════════
 
+function BloxHub:CreateExampleGUI()
+    local Main = self:CreateWindow("BloxHub Example")
+    
+    -- Register a hotkey to toggle the main window
+    Main:RegisterHotkey("ToggleGUI", Enum.KeyCode.RightShift, function()
+        Main:Toggle()
+    end)
+    
+    self:CreateFloatingIcon(Main, {Text = "Toggle GUI", ShowOnMinimize = true})
+
+    local featuresTab = Main:CreateTab("Features")
+    
+    featuresTab:AddButton("Test Button", function()
+        self:Notify("Button Clicked", "The test button was pressed.", 3, "Info")
+    end)
+    
+    featuresTab:AddToggle("Enable Feature", false, function(state)
+        self:Notify("Toggle Changed", "Feature is now " .. (state and "ON" or "OFF"), 2, "Success")
+    end)
+    
+    featuresTab:AddSlider("Field of View", 1, 120, 70, function(value)
+        print("Slider Value:", value)
+    end)
+    
+    featuresTab:AddKeybind("Aimbot Key", Enum.KeyCode.E, function(key, inputType, keyName)
+        self:Notify("Keybind Set", "Aimbot key set to " .. keyName, 3, "Info")
+    end)
+    
+    featuresTab:AddDropdown("Select Mode", {"Option 1", "Option 2", "Another Choice"}, function(choice)
+        self:Notify("Dropdown", "Selected: " .. choice, 2)
+    end)
+    
+    featuresTab:AddTextBox("Username", "Enter your name...", function(text, enterPressed)
+        if enterPressed then
+            self:Notify("Text Submitted", "Welcome, " .. text, 3, "Success")
+        end
+    end)
+    
+    featuresTab:AddDivider()
+    featuresTab:AddLabel("Section Title", {Bold = true, TextSize = 16})
+    featuresTab:AddLabel("This is an informational label about the section below. It can wrap text if needed.", {Height = 40})
+
+    local visualsTab = Main:CreateTab("Visuals")
+    visualsTab:AddToggle("ESP", true)
+    visualsTab:AddToggle("Chams", false)
+
+    local settingsTab = Main:CreateTab("Settings")
+    settingsTab:AddDropdown("Theme", {"Dark", "Light", "Purple", "Green"}, function(theme)
+        self:SetTheme(theme)
+    end)
+    settingsTab:AddButton("Save Config", function()
+        self:SaveConfig()
+        self:Notify("Success", "Configuration saved.", 2, "Success")
+    end)
+end
 
 
 -- ═══════════════════════════════════════════════════════════
@@ -1564,7 +1609,8 @@ BloxHub:Notify(
     "Success"
 )
 
-
+-- Create example GUI (comment this out in production)
+BloxHub:CreateExampleGUI()
 
 -- Return framework for external use
 return BloxHub
