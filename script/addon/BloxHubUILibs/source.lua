@@ -799,6 +799,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     container.Size = UDim2.new(1, 0, 0, 35)
     container.BackgroundColor3 = BloxHub.Settings.Theme.Primary
     container.BorderSizePixel = 0
+    container.ZIndex = 50  -- 设置基础ZIndex
     container.Parent = tab.Container
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, container)
@@ -813,6 +814,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     label.TextSize = 14
     label.Font = BloxHub.Settings.Font
     label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 51  -- 设置ZIndex
     label.Parent = container
     
     -- 下拉按钮
@@ -825,19 +827,21 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     dropdownBtn.TextSize = 12
     dropdownBtn.Font = BloxHub.Settings.FontSemibold
     dropdownBtn.AutoButtonColor = false
+    dropdownBtn.ZIndex = 51  -- 设置ZIndex
     dropdownBtn.Parent = container
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, dropdownBtn)
     
-    -- 选项容器（初始隐藏）- 修改：直接附加到ScreenGui而不是container
+    -- 选项容器（初始隐藏）
+    -- 重要修改：将选项容器直接添加到ScreenGui而不是主容器
     local optionsContainer = Instance.new("Frame")
-    optionsContainer.Name = "DropdownOptions"
+    optionsContainer.Name = "DropdownOptions_" .. text
     optionsContainer.Size = UDim2.new(0.5, -12, 0, 0)
     optionsContainer.BackgroundColor3 = BloxHub.Settings.Theme.Secondary
     optionsContainer.BorderSizePixel = 0
     optionsContainer.Visible = false
-    optionsContainer.ZIndex = 1000  -- 大幅提高ZIndex
-    optionsContainer.Parent = BloxHub.Core.ScreenGui  -- 直接附加到ScreenGui
+    optionsContainer.ZIndex = 1000  -- 设置更高的ZIndex确保在最前面
+    optionsContainer.Parent = BloxHub.Core.ScreenGui  -- 直接添加到ScreenGui
     
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionsContainer)
     
@@ -869,7 +873,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             optionBg.Text = ""
             optionBg.AutoButtonColor = false
             optionBg.LayoutOrder = i
-            optionBg.ZIndex = 1001  -- 确保比容器高一级
+            optionBg.ZIndex = 1001  -- 设置更高的ZIndex
             optionBg.Parent = optionsContainer
             
             CreateUICorner(BloxHub.Settings.CornerRadius.Small, optionBg)
@@ -884,7 +888,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             optionText.TextSize = 12
             optionText.Font = BloxHub.Settings.Font
             optionText.TextXAlignment = Enum.TextXAlignment.Left
-            optionText.ZIndex = 1002  -- 确保比背景高一级
+            optionText.ZIndex = 1002  -- 设置更高的ZIndex
             optionText.Parent = optionBg
             
             -- 选中状态指示器
@@ -895,7 +899,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             selectedIndicator.BackgroundColor3 = BloxHub.Settings.Theme.Accent
             selectedIndicator.BorderSizePixel = 0
             selectedIndicator.Visible = (option == selectedOption)
-            selectedIndicator.ZIndex = 1003  -- 确保比文本高一级
+            selectedIndicator.ZIndex = 1003  -- 设置更高的ZIndex
             selectedIndicator.Parent = optionBg
             
             -- 事件处理
@@ -937,18 +941,6 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     -- 初始化选项
     createOptions()
     
-    -- 更新选项位置的函数
-    local function updateOptionsPosition()
-        if expanded then
-            -- 计算下拉按钮在屏幕上的绝对位置
-            local absolutePos = dropdownBtn.AbsolutePosition
-            local absoluteSize = dropdownBtn.AbsoluteSize
-            
-            -- 设置选项容器的位置为下拉按钮下方
-            optionsContainer.Position = UDim2.new(0, absolutePos.X, 0, absolutePos.Y + absoluteSize.Y)
-        end
-    end
-    
     -- 下拉按钮点击事件
     dropdownBtn.MouseButton1Click:Connect(function()
         expanded = not expanded
@@ -956,7 +948,10 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         
         if expanded then
             dropdownBtn.Text = selectedOption .. " ▲"
-            updateOptionsPosition()
+            -- 计算并设置选项容器的位置，使其显示在下拉按钮下方
+            local buttonPos = dropdownBtn.AbsolutePosition
+            local buttonSize = dropdownBtn.AbsoluteSize
+            optionsContainer.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y)
         else
             dropdownBtn.Text = selectedOption .. " ▼"
         end
@@ -969,15 +964,6 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     dropdownBtn.MouseLeave:Connect(function()
         Tween(dropdownBtn, {BackgroundColor3 = BloxHub.Settings.Theme.Secondary}, 0.2)
     end)
-    
-    -- 监听容器位置/大小变化，以便更新选项位置
-    tab.Container:GetPropertyChangedSignal("AbsolutePosition"):Connect(updateOptionsPosition)
-    tab.Container:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateOptionsPosition)
-    
-    -- 监听窗口移动，以便更新选项位置
-    if tab.Window and tab.Window.Frame then
-        tab.Window.Frame:GetPropertyChangedSignal("AbsolutePosition"):Connect(updateOptionsPosition)
-    end
     
     -- 返回控制对象
     return {
@@ -999,7 +985,6 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         end,
         Refresh = function()
             createOptions()
-            updateOptionsPosition()
         end
     }
 end
@@ -1540,101 +1525,6 @@ function BloxHub:Destroy()
     self.Core.Initialized = false
 end
 
--- ═══════════════════════════════════════════════════════════
--- EXAMPLE USAGE & DEFAULT DEMO
--- ═══════════════════════════════════════════════════════════
-
-function BloxHub:CreateExampleGUI()
-    -- Create main window
-    local mainWindow = self:CreateWindow("BloxHub Framework", {
-        Size = UDim2.new(0, 520, 0, 420),
-        Visible = true
-    })
-    
-    -- Create tabs
-    local featuresTab = mainWindow:CreateTab("Features")
-    local visualsTab = mainWindow:CreateTab("Visuals")
-    local settingsTab = mainWindow:CreateTab("Settings")
-    
-    -- Features Tab
-    featuresTab:AddLabel("Combat Features", {Bold = true, Height = 30})
-    featuresTab:AddToggle("Enable Aimbot", false, function(state)
-        print("Aimbot:", state)
-    end)
-    featuresTab:AddSlider("Aimbot FOV", 1, 100, 60, function(value)
-        print("FOV:", value)
-    end)
-    featuresTab:AddKeybind("Aimbot Hotkey", Enum.KeyCode.E, function(key, inputType, name)
-        print("Aimbot key set to:", name)
-    end)
-    
-    featuresTab:AddDivider()
-    featuresTab:AddLabel("Movement", {Bold = true, Height = 30})
-    featuresTab:AddToggle("Speed Hack", false, function(state)
-        print("Speed:", state)
-    end)
-    featuresTab:AddSlider("Speed Multiplier", 1, 5, 2, function(value)
-        print("Speed Multiplier:", value)
-    end)
-    
-    -- Visuals Tab
-    visualsTab:AddLabel("ESP Settings", {Bold = true, Height = 30})
-    visualsTab:AddToggle("Enable ESP", false, function(state)
-        print("ESP:", state)
-    end)
-    visualsTab:AddToggle("Show Names", true, function(state)
-        print("Show Names:", state)
-    end)
-    visualsTab:AddToggle("Show Distance", true, function(state)
-        print("Show Distance:", state)
-    end)
-    visualsTab:AddDropdown("ESP Type", {"Box", "Outline", "Filled", "3D"}, function(option)
-        print("ESP Type:", option)
-    end)
-    
-    visualsTab:AddDivider()
-    visualsTab:AddLabel("Chams", {Bold = true, Height = 30})
-    visualsTab:AddToggle("Enable Chams", false, function(state)
-        print("Chams:", state)
-    end)
-    
-    -- Settings Tab
-    settingsTab:AddLabel("UI Settings", {Bold = true, Height = 30})
-    settingsTab:AddDropdown("Theme", {"Dark", "Light", "Purple", "Green"}, function(theme)
-        BloxHub:SetTheme(theme)
-    end)
-    settingsTab:AddButton("Save Config", function()
-        BloxHub:SaveConfig("default")
-        BloxHub:Notify("Config Saved", "Your configuration has been saved successfully!", 3, "Success")
-    end)
-    settingsTab:AddButton("Load Config", function()
-        BloxHub:LoadConfig("default")
-        BloxHub:Notify("Config Loaded", "Configuration loaded from file!", 3, "Info")
-    end)
-    
-    settingsTab:AddDivider()
-    settingsTab:AddLabel("About", {Bold = true, Height = 30})
-    settingsTab:AddLabel("BloxHub Framework v" .. self.Version)
-    settingsTab:AddLabel("Universal Roblox GUI System")
-    settingsTab:AddTextBox("Custom Script", "Paste script here...", function(text, enterPressed)
-        if enterPressed then
-            print("Executing:", text)
-        end
-    end)
-    
-    -- Create floating icon
-    self:CreateFloatingIcon(mainWindow, {
-        Text = "🧩 BloxHub",
-        ShowOnMinimize = true
-    })
-    
-    -- Register toggle hotkey
-    mainWindow:RegisterHotkey("ToggleGUI", Enum.KeyCode.RightShift, function()
-        mainWindow:Toggle()
-    end)
-    
-    return mainWindow
-end
 
 -- ═══════════════════════════════════════════════════════════
 -- INITIALIZATION & RETURN
