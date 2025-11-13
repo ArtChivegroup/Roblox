@@ -789,6 +789,7 @@ function BloxHub.Elements:CreateKeybind(tab, text, defaultKey, callback)
     }
 end
 
+-- 改进的下拉菜单实现
 function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     local selectedOption = options[1] or "None"
     local expanded = false
@@ -1518,25 +1519,83 @@ function BloxHub:Destroy()
     self.Core.Initialized = false
 end
 
-
-
 -- ═══════════════════════════════════════════════════════════
--- INITIALIZATION & RETURN
+-- EXAMPLE USAGE & DEFAULT DEMO
 -- ═══════════════════════════════════════════════════════════
 
--- Auto-initialize
-BloxHub:Init()
+function BloxHub:CreateExampleGUI()
+    -- Create main window
+    local mainWindow = self:CreateWindow("BloxHub Framework", {
+        Size = UDim2.new(0, 520, 0, 420),
+        Visible = true
+    })
+    
+    -- Create tabs
+    local featuresTab = mainWindow:CreateTab("Features")
+    local visualsTab = mainWindow:CreateTab("Visuals")
+    local settingsTab = mainWindow:CreateTab("Settings")
+    
+    -- Features Tab
+    featuresTab:AddLabel("Combat Features", {Bold = true, Height = 30})
+    featuresTab:AddToggle("Enable Aimbot", false, function(state)
+        print("Aimbot:", state)
+    end)
+    featuresTab:AddSlider("Aimbot FOV", 1, 100, 60, function(value)
+        print("FOV:", value)
+    end)
+    featuresTab:AddKeybind("Aimbot Hotkey", Enum.KeyCode.E, function(key, inputType, name)
+        print("Aimbot key set to:", name)
+    end)
+    
+    featuresTab:AddDivider()
+    featuresTab:AddLabel("Movement", {Bold = true, Height = 30})
+    featuresTab:AddToggle("Speed Hack", false, function(state)
+        print("Speed:", state)
+    end)
+    featuresTab:AddSlider("Speed Multiplier", 1, 5, 2, function(value)
+        print("Speed Multiplier:", value)
+    end)
+    
+    -- Visuals Tab
+    visualsTab:AddLabel("ESP Settings", {Bold = true, Height = 30})
+    visualsTab:AddToggle("Enable ESP", false, function(state)
+        print("ESP:", state)
+    end)
+    visualsTab:AddToggle("Show Names", true, function(state)
+        print("Show Names:", state)
+    end)
+    visualsTab:AddToggle("Show Distance", true, function(state)
+        print("Show Distance:", state)
+    end)
+    visualsTab:AddDropdown("ESP Type", {"Box", "Outline", "Filled", "3D"}, function(option)
+        print("ESP Type:", option)
+    end)
+    
+    visualsTab:AddDivider()
+    visualsTab:AddLabel("Chams", {Bold = true, Height = 30})
+    visualsTab:AddToggle("Enable Chams", false, function(state)
+        print("Chams:", state)
+    end)
+    
+    -- Settings Tab
+    settingsTab:AddLabel("UI Settings", {Bold = true, Height = 30})
+    settingsTab:AddDropdown("Theme", {"Dark", "Light", "Purple", "Green"}, function(theme)
+        BloxHub:SetTheme(theme)
+    end)
+    settingsTab:AddButton("Save Config", function()
+        BloxHub:SaveConfig("default")
+        BloxHub:Notify("Config Saved", "Your configuration has been saved successfully!", 3, "Success")
+    end)
+    settingsTab:AddButton("Load Config", function()
+        BloxHub:LoadConfig("default")
+        BloxHub:Notify("Config Loaded", "Your configuration has been loaded successfully!", 3, "Success")
+    end)
+    
+    return mainWindow
+end
 
--- Show welcome notification
-BloxHub:Notify(
-    "BloxHub Framework Loaded",
-    "Press RightShift to toggle GUI | Version " .. BloxHub.Version,
-    4,
-    "Success"
-)
+-- ═══════════════════════════════════════════════════════════
+-- RETURN FRAMEWORK
+-- ═══════════════════════════════════════════════════════════
 
--- Create example GUI (comment this out in production)
-BloxHub:CreateExampleGUI()
-
--- Return framework for external use
 return BloxHub
