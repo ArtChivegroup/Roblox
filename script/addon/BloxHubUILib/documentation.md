@@ -5,7 +5,7 @@
 
 The entire framework is contained within a single Lua file, making it incredibly simple to use and distribute.
 
-## ✨ Features
+##  Features
 
 -   **Single-File Library**: No complex file structures. Just load one file and you're ready to go.
 -   **Component-Based Design**: Build complex UIs by combining simple components like buttons, toggles, sliders, and more.
