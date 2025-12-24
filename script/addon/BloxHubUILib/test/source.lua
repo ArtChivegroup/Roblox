@@ -422,73 +422,85 @@ function BloxHub:CreateWindow(title, config)
     -- Header with gradient
     local header = Instance.new("Frame")
     header.Name = "Header"
-    header.Size = UDim2.new(1, 0, 0, 50)
-    header.BackgroundColor3 = self.Settings.Theme.Primary
+    header.Size = UDim2.new(1, 0, 0, 44)
+    header.BackgroundColor3 = self.Settings.Theme.Background
+    header.BackgroundTransparency = 1
     header.BorderSizePixel = 0
     header.Parent = mainFrame
     
-    -- Header bottom corners fix (only round top)
-    local headerCorner = Instance.new("Frame")
-    headerCorner.Size = UDim2.new(1, 0, 0, 15)
-    headerCorner.Position = UDim2.new(0, 0, 1, -15)
-    headerCorner.BackgroundColor3 = self.Settings.Theme.Primary
-    headerCorner.BorderSizePixel = 0
-    headerCorner.Parent = header
+    -- Logo Shape (Accent Square)
+    local logoContainer = Instance.new("Frame")
+    logoContainer.Name = "Logo"
+    logoContainer.Size = UDim2.new(0, 24, 0, 24)
+    logoContainer.Position = UDim2.new(0, 14, 0.5, -12)
+    logoContainer.BackgroundColor3 = self.Settings.Theme.AccentGradient
+    logoContainer.BorderSizePixel = 0
+    logoContainer.Parent = header
+    CreateUICorner(6, logoContainer)
     
-    CreateUICorner(self.Settings.CornerRadius.Large, header)
+    local logoDot = Instance.new("Frame")
+    logoDot.Size = UDim2.new(0, 8, 0, 8)
+    logoDot.Position = UDim2.new(0.5, -4, 0.5, -4)
+    logoDot.BackgroundColor3 = Color3.new(1,1,1)
+    logoDot.BackgroundTransparency = 0.2
+    logoDot.BorderSizePixel = 0
+    logoDot.Parent = logoContainer
+    CreateUICorner(4, logoDot)
     
-    -- Header gradient
-    local headerGradient = Instance.new("UIGradient")
-    headerGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, self.Settings.Theme.Primary),
-        ColorSequenceKeypoint.new(1, self.Settings.Theme.PrimaryGradient)
-    })
-    headerGradient.Rotation = 90
-    headerGradient.Parent = header
+    -- Accent Line (Bottom of Header)
+    CreateAccentLine(header, UDim2.new(0, 0, 1, -1))
     
-    -- Accent line under header
-    CreateAccentLine(mainFrame, UDim2.new(0, 0, 0, 50))
-    
-    -- Title with icon space
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "Title"
-    titleLabel.Size = UDim2.new(1, -120, 1, 0)
-    titleLabel.Position = UDim2.new(0, 18, 0, 0)
+    titleLabel.Size = UDim2.new(1, -90, 1, 0)
+    titleLabel.Position = UDim2.new(0, 48, 0, 0)
     titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = "⚡ " .. window.Title
+    titleLabel.Text = window.Title
     titleLabel.TextColor3 = self.Settings.Theme.Text
-    titleLabel.TextSize = BloxHub.Device.IsMobile and 16 or 18
+    titleLabel.TextSize = BloxHub.Device.IsMobile and 16 or 17
     titleLabel.Font = self.Settings.FontBold
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.Parent = header
     
-    -- Minimize button (larger for mobile)
-    local btnSize = BloxHub.Device.IsMobile and 44 or 38
+    -- Minimize Button (Clean Shape)
+    local btnSize = BloxHub.Device.IsMobile and 32 or 28
     local minimizeBtn = Instance.new("TextButton")
-    minimizeBtn.Name = "MinimizeBtn"
+    minimizeBtn.Name = "Minimize"
     minimizeBtn.Size = UDim2.new(0, btnSize, 0, btnSize)
-    minimizeBtn.Position = UDim2.new(1, -btnSize - 8, 0.5, -btnSize/2)
+    minimizeBtn.Position = UDim2.new(1, -btnSize - 12, 0.5, -btnSize/2)
     minimizeBtn.BackgroundColor3 = self.Settings.Theme.Secondary
-    minimizeBtn.Text = "−"
-    minimizeBtn.TextColor3 = self.Settings.Theme.Text
-    minimizeBtn.TextSize = 20
-    minimizeBtn.Font = self.Settings.FontBold
+    minimizeBtn.BackgroundTransparency = 0.5
+    minimizeBtn.Text = ""
     minimizeBtn.AutoButtonColor = false
     minimizeBtn.Parent = header
     
-    CreateUICorner(self.Settings.CornerRadius.Small, minimizeBtn)
-    CreateUIStroke(minimizeBtn, self.Settings.Theme.Border, 1, 0.7)
+    CreateUICorner(8, minimizeBtn)
+    local minStroke = CreateUIStroke(minimizeBtn, self.Settings.Theme.Border, 1, 0.5)
+
+    -- Minimize Icon (Line)
+    local minIcon = Instance.new("Frame")
+    minIcon.Size = UDim2.new(0, 12, 0, 2)
+    minIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+    minIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+    minIcon.BackgroundColor3 = self.Settings.Theme.TextDim
+    minIcon.BorderSizePixel = 0
+    minIcon.Parent = minimizeBtn
+    CreateUICorner(2, minIcon)
     
     minimizeBtn.MouseButton1Click:Connect(function()
         window:Toggle()
     end)
     
     minimizeBtn.MouseEnter:Connect(function()
-        Tween(minimizeBtn, {BackgroundColor3 = self.Settings.Theme.Accent}, 0.15)
+        Tween(minimizeBtn, {BackgroundColor3 = self.Settings.Theme.Accent, BackgroundTransparency = 0}, 0.2)
+        Tween(minIcon, {BackgroundColor3 = self.Settings.Theme.Text}, 0.2)
+        if minStroke then minStroke.Transparency = 1 end
     end)
     
     minimizeBtn.MouseLeave:Connect(function()
-        Tween(minimizeBtn, {BackgroundColor3 = self.Settings.Theme.Secondary}, 0.2)
+        Tween(minimizeBtn, {BackgroundColor3 = self.Settings.Theme.Secondary, BackgroundTransparency = 0.5}, 0.2)
+        Tween(minIcon, {BackgroundColor3 = self.Settings.Theme.TextDim}, 0.2)
+        if minStroke then minStroke.Transparency = 0.5 end
     end)
     
     -- Tab container (adjusted for new header height)
@@ -554,7 +566,7 @@ function BloxHub:CreateWindow(title, config)
     
     function window:SetTitle(newTitle)
         self.Title = newTitle
-        titleLabel.Text = "⚡ " .. newTitle
+        titleLabel.Text = newTitle
     end
     
     function window:CreateTab(tabName)
@@ -1217,7 +1229,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             
             optionBg.MouseButton1Click:Connect(function()
                 selectedOption = option
-                dropdownBtn.Text = option .. " ▼"
+                dropdownBtn.Text = option .. "  ⌵"
                 expanded = false
                 optionsContainer.Visible = false
                 
@@ -1255,10 +1267,10 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
             optionsContainer.Size = UDim2.fromOffset(btnSize.X, optionsContainer.AbsoluteSize.Y)
             optionsContainer.Position = UDim2.fromOffset(btnPos.X, btnPos.Y + btnSize.Y + 5)
             
-            dropdownBtn.Text = selectedOption .. " ▲"
+            dropdownBtn.Text = selectedOption .. "  ʌ"
             optionsContainer.Visible = true
         else
-            dropdownBtn.Text = selectedOption .. " ▼"
+            dropdownBtn.Text = selectedOption .. "  ⌵"
             optionsContainer.Visible = false
         end
     end)
@@ -1269,7 +1281,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
     local function closeDropdown()
         expanded = false
         optionsContainer.Visible = false
-        dropdownBtn.Text = selectedOption .. " ▼"
+        dropdownBtn.Text = selectedOption .. "  ⌵"
     end
     
     -- Menutup dropdown jika tab diganti
@@ -1285,7 +1297,7 @@ function BloxHub.Elements:CreateDropdown(tab, text, options, callback)
         SetValue = function(_, value)
             if table.find(options, value) then
                 selectedOption = value
-                dropdownBtn.Text = value .. " ▼"
+                dropdownBtn.Text = value .. "  ⌵"
                 for _, obj in pairs(optionObjects) do
                     local indicator = obj:FindFirstChild("SelectedIndicator")
                     if indicator then
@@ -1378,16 +1390,28 @@ function BloxHub.Elements:CreateLabel(tab, text, config)
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundTransparency = 1
-    label.Text = config.Bold and ("› " .. text) or text
-    label.TextColor3 = config.TextColor or (config.Bold and BloxHub.Settings.Theme.Accent or BloxHub.Settings.Theme.TextDim)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -10, 1, 0)
+    label.Position = UDim2.new(0, config.Bold and 10 or 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = config.TextColor or (config.Bold and BloxHub.Settings.Theme.Text or BloxHub.Settings.Theme.TextDim)
     label.TextSize = config.TextSize or (config.Bold and 14 or 13)
     label.Font = config.Bold and BloxHub.Settings.FontBold or BloxHub.Settings.Font
     label.TextXAlignment = config.TextXAlignment or Enum.TextXAlignment.Left
     label.TextWrapped = true
     label.Parent = container
-    
-    return container
-end
+
+    if config.Bold then
+        -- Vertical Accent Bar for Bold Labels
+        local accentBar = Instance.new("Frame")
+        accentBar.Size = UDim2.new(0, 3, 0, 14)
+        accentBar.Position = UDim2.new(0, 0, 0.5, -7)
+        accentBar.BackgroundColor3 = BloxHub.Settings.Theme.Accent
+        accentBar.BorderSizePixel = 0
+        accentBar.Parent = container
+        CreateUICorner(2, accentBar)
+    end
 
 function BloxHub.Elements:CreateDivider(tab)
     local container = Instance.new("Frame")
