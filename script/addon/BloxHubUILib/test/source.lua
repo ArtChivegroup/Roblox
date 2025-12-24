@@ -1,4 +1,4 @@
---[[
+--[[ 1
     ╔═══════════════════════════════════════════════════════════╗
     ║           BloxHub GUI Framework v3.0                      ║
     ║           Universal Roblox GUI System                     ║
@@ -1388,9 +1388,6 @@ function BloxHub.Elements:CreateLabel(tab, text, config)
     container.Parent = tab.Container
     
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, -10, 1, 0)
     label.Position = UDim2.new(0, config.Bold and 10 or 0, 0, 0)
     label.BackgroundTransparency = 1
@@ -1412,6 +1409,9 @@ function BloxHub.Elements:CreateLabel(tab, text, config)
         accentBar.Parent = container
         CreateUICorner(2, accentBar)
     end
+    
+    return container
+end
 
 function BloxHub.Elements:CreateDivider(tab)
     local container = Instance.new("Frame")
