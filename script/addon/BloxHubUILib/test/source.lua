@@ -735,16 +735,6 @@ function BloxHub.Elements:CreateButton(tab, text, callback)
     CreateUICorner(BloxHub.Settings.CornerRadius.Small, button)
     CreateUIStroke(button, BloxHub.Settings.Theme.Border, 1, 0.7)
     
-    -- Gradient overlay
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200))
-    })
-    gradient.Rotation = 90
-    gradient.Transparency = NumberSequence.new(0.95, 0.98)
-    gradient.Parent = button
-    
     button.MouseButton1Click:Connect(function()
         -- Click animation
         Tween(button, {Size = UDim2.new(1, -4, 0, BloxHub.Device.IsMobile and 40 or 36)}, 0.05)
@@ -850,12 +840,16 @@ function BloxHub.Elements:CreateToggle(tab, text, default, callback)
         setToggleState(not toggleState)
     end)
     
-    -- Make container clickable too
+    -- Make container clickable too (behind label)
     local containerBtn = Instance.new("TextButton")
     containerBtn.Size = UDim2.new(1, -60, 1, 0)
     containerBtn.BackgroundTransparency = 1
     containerBtn.Text = ""
+    containerBtn.ZIndex = 1
     containerBtn.Parent = container
+    
+    -- Ensure label is on top
+    label.ZIndex = 2
     
     containerBtn.MouseButton1Click:Connect(function()
         setToggleState(not toggleState)
