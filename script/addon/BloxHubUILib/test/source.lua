@@ -1,4 +1,4 @@
---[[ 1
+--[[
     ╔═══════════════════════════════════════════════════════════╗
     ║           BloxHub GUI Framework v3.0                      ║
     ║           Universal Roblox GUI System                     ║
