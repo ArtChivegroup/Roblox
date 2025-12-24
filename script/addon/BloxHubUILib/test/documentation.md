@@ -20,7 +20,7 @@
 ### 1. Load the Library
 
 ```lua
-local BloxHub = loadstring(game:HttpGet("https://raw.githubusercontent.com/ArtChivegroup/Roblox/refs/heads/main/script/addon/BloxHubUILib/source.lua"))()
+local BloxHub = loadstring(game:HttpGet("https://raw.githubusercontent.com/ArtChivegroup/Roblox/refs/heads/main/script/addon/BloxHubUILib/test/source.lua"))()
 ```
 
 ### 2. Create Your First Window
